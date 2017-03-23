@@ -17,12 +17,15 @@ int SWITCH_FGAS = 1;
 int SWITCH_DYNAMICAL_FRICTION = 1;
 int SINGLE_GC_POPULATION = 0;
 int MERGER_GROWTH = 1;
-int DISK_GROWTH = 1;
+int DISK_GROWTH = 0;
 int MURATOV_LOOKUP = 0;
+int MSTAR_SCATTER = 1;
+int MGAS_SCATTER = 1;
 
 // other globals
 float MGC;
 float MIN_GC_MASS = 1.0E+5;
+long IDUM = 555;
 
 struct TREE1 {
   int nhalo;
@@ -62,6 +65,7 @@ float qromo(float (*func)(float), float a, float b,
 float midpnt(float (*func)(float), float a, float b, int n);
 float zbrent(float (*func)(float), float x1, float x2, float tol);
 void test_bimodality(float *x, float n);
+float gasdev(long *idum);
 
 
 /* function prototypes
@@ -78,12 +82,14 @@ int does_merger_happen(float m1, float m2, float time, float redshift, float eta
 float metallicity(float mstar, float time);
 float func_mmax(float lnmass);
 void monte_carlo_gc_population(float mgc, float mstar, float time, float redshift, int mode, int ihalo, int iz);
-float dynamically_evolve(float mass, float time)
-  ;
+float dynamically_evolve(float mass, float time);
+
+
 int main(int argc, char **argv)
 {
   // seed the randoms
   srand48(555);
+  IDUM = 555;
 
   // read in the parsed tree
   read_tree(argv[1]);
@@ -186,10 +192,11 @@ void evolve_tree()
 
 		      //printf("%3d %10d %10d %f %f %e %e\n",i,itarg,j,t.redshift[i],m2/m1,m1,m2);
 		      // is mass ratio high enough? 
-		      if(m2/m1>0.1)
+		      if(m2/m1>0.2)
 			{
-			  dm = 3.0E6*(t.gasmass[itarg][i] + t.gasmass[j][i])/BARYON_FRACTION/1.0E11*5*
-			    pow((1+t.redshift[i])/(1+8.3),0.0);
+			  dm = 3.0E6*(t.gasmass[itarg][i] + t.gasmass[j][i])/BARYON_FRACTION/1.0E11*15*
+			    pow((1+t.redshift[i])/(1+4.3),1.0)*
+			    pow(t.mass[itarg][i]/1.0E11,-0.5);
 			  if(dm<1.0E+5)dm=0;
 			  if(dm==0)continue;
 			  t.gc[itarg] += dm;
@@ -209,7 +216,7 @@ void evolve_tree()
 		    {
 		      if(t.gasmass[j][i]/(BARYON_FRACTION*t.mass[j][i])>0.8)
 			{
-			  dm = 3.06E6*(t.gasmass[j][i])/BARYON_FRACTION/1.0E11*20*
+			  dm = 3.06E6*(t.gasmass[j][i])/BARYON_FRACTION/1.0E11*5*
 			    fabs(t.lookback_time[i-1]-t.lookback_time[i])/0.1;
 			  if(dm<1.0E+5)dm=0;
 			  if(dm==0)continue;
@@ -421,7 +428,7 @@ void read_tree(char *fname)
 float fgas_lookup(float redshift, float mass)
 {
   FILE *fp;
-  float fg1,fg2,fg,x1,x2,x3;
+  float fg1,fg2,fg,x1,x2,x3,mdev;
   int i,j,iz;
   static int flag = 1;
   static float *zz, *mh, **fgas;
@@ -466,18 +473,21 @@ float fgas_lookup(float redshift, float mass)
 	fg2 = fgas[iz-1][i];
 	break; 
       }
-  fg = (fg1-fg2)/(zz[iz]-zz[iz-1])*(redshift-zz[iz-1]) + fg2;
-  //if(exp(fg)>1)
-  //printf("ERROR: %f %e %f\n",redshift,exp(mass),exp(fg));
-  //return 1;
-  return(exp(fg));
+  fg = (fg1-fg2)/(zz[iz]-zz[iz-1])*(redshift-zz[iz-1]) + fg2;  if(MSTAR_SCATTER)
+
+  // add in scatter in the gas fractions if needed
+  if(MGAS_SCATTER)
+    mdev = gasdev(&IDUM)*0.2*log(10);
+  else
+    mdev = 0;
+  return(exp(fg+mdev));
 
 }
 
 float mstar_lookup(float redshift, float mass)
 {
   FILE *fp;
-  float fg1,fg2,fg,x1,x2,x3;
+  float fg1,fg2,fg,x1,x2,x3,mdev;
   int i,j,iz;
   static int flag = 1;
   static float *zz, *mh, **fgas;
@@ -524,8 +534,15 @@ float mstar_lookup(float redshift, float mass)
 	break; 
       }
   fg = (fg1-fg2)/(zz[iz]-zz[iz-1])*(redshift-zz[iz-1]) + fg2;
+
+  // add in scatter in the SHMR if required
+  if(MSTAR_SCATTER)
+    mdev = gasdev(&IDUM)*0.2*log(10);
+  else
+    mdev = 0;
+
   //printf("LOOKUP %f %e %e %e %e %d %d\n",redshift, exp(mass),exp(fg1),exp(fg2),exp(fg),iz,i);
-  return(exp(fg+mass));
+  return(exp(fg+mass+mdev));
 
 }
 
