@@ -1,0 +1,27 @@
+Gaussian Mixture Model of a univariate sample
+looking for 2 peaks with different variances
+number of data points = 220  kurtosis = -0.795
+...running unimodal Gaussian
+iter=2 err=0.0e+00:  peak=-1.490 (n=220.0 sig=0.534)  logL1=-173.985
+...running Gaussian mixture with different variances
+iter=6 err=7.7e-07:  peak1=-1.777 (n=161.4 sig=0.253)  peak2=-0.698 (n=58.6 sig=0.198)  logL=-119.07
+Chi-square statistic (null=unimodal): chi2=109.83 Ndof=4 p=0.00e+00
+Peak separation DD = 4.76
+...running Gaussian mixture with same variances
+iter=11 err=3.1e-07:  peak1=-1.781 (n=160.4 sig=0.229)  peak2=-0.706 (n=59.6 sig=0.229)  logL=-121.288
+Chi-square statistic (null=unimodal): chi2=105.39 Ndof=2 p=0.00e+00
+Peak separation DD = 4.70
+...running Gaussian mixture with same means and different variances
+iter=79 err=-8.8e-07:  peak1=-1.545 (n=197.8 sig=0.560)  peak2=-1.545 (n=22.2 sig=0.140)  logL=-173.583
+Chi-square statistic (null=equal means): chi2=109.03 Ndof=1 p=0.00e+00
+Chi-square statistic (null=equal variances): chi2=4.44 Ndof=1 p=3.52e-02
+...running bootstrap to estimate errors of best-fit parameters
+Bootstrap unimodal: mean = -1.490 +- 0.039  sig = 0.532 +- 0.022
+Bootstrap peak1: mean = -1.777 +- 0.017  sig = 0.252 +- 0.016  n = 161.6 +- 8.0
+Bootstrap peak2: mean = -0.696 +- 0.028  sig = 0.196 +- 0.013  n = 58.4 +- 8.0
+Bootstrap DD = 4.78 +- 0.25
+...running parametric bootstrap to rule out unimodal distribution
+Parametric bootstrap: p(chi2) < 0.001
+Parametric bootstrap: p(DD) = 0.026
+Parametric bootstrap: p(kurt) = 0.002
+summary -1.777 0.017 -0.698 0.028 0.253 0.016 0.198 0.013  220 0.266 0.036 4.76 0.25 0.001 0.026 0.002 x.in

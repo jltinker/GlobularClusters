@@ -1,0 +1,176 @@
+ctype black
+lweight 3.5
+expand 1.2
+putwin 1 1 9 9
+xtcolours
+
+local define print_noheader 1
+
+set fbar = 0.15
+set zz = 6
+
+
+set redshift = 0,9,0.1
+
+set redshift = 0,8,1.0
+set redshift = (redshift<0.5) ? 0.1 : redshift*1.0
+
+set mh = 8,15,0.1
+set a = dimen(redshift)
+set b = dimen(mh)
+
+print behroozi_lookup.dat { a b }
+print + behroozi_lookup.dat { redshift }
+
+
+do i=0,dimen(redshift)-1 { 
+set zz = redshift[$i]
+set mh = 8,15,0.1
+set mh = 10**mh
+
+set mc = 3.6e9*exp(-0.6*(1+zz))/0.7
+set mcmin = 1.5e10*sqrt(0.3*(1+zz)**3 + 0.7)**-1*200**-0.5/0.7
+set mc = (mc<mcmin) ? mcmin : mc
+
+set f_in = 1/(1 + mc/mh)**3
+
+set fstar = 0.32*(mh/1e12)**0.1*(1+zz)**-2
+#alternate fstar
+#set fstar = 0.32*(mh/1e12)**0.5*(1+zz)**-1
+
+set fstar = (fstar>f_in) ? f_in : fstar
+
+
+set mstar = fstar*fbar*mh
+set ms = 10**(9.6+0.35*zz)
+set mgas = mstar*(mstar/ms)**-0.7
+set fg = mgas/(fbar*mh)
+# check to make sure we don't have too much gas
+set mgas = (fg>1) ? fbar*mh : mgas
+set fg = mgas/(fbar*mh)
+
+set fg1 = fg
+set fstar1 = fstar
+
+# what is mass at which ftot>fin?
+set x = -((fg1+fstar1)-f_in)
+set lmh = lg(mh)
+set a = 0.0
+interp2 x lmh a mcrit
+interp2 lmh fstar mcrit fstar_c
+interp2 lmh fg mcrit fg_c
+set mucrit = fstar_c/(fg_c+fstar_c)
+echo $(mcrit) $(fstar_c) $(fg_c) $(mucrit)
+#set fg = (lmh<mcrit) ? f_in/(1+(mucrit**-1-1)) : fg
+#set fstar = (lmh<mcrit) ? f_in-fg : fstar
+
+set fstar = (lmh<mcrit) ? f_in/(1+(mucrit**-1-1)) : fstar
+set fstar = (fstar>fstar1) ? fstar1 : fstar
+set fg = (lmh<mcrit) ? f_in-fstar : fg
+
+# now convert these to galaxy and gas masses
+set mgal = fstar*mh*fbar
+set mgas = fg*mh*fbar
+
+fourwinx11 1
+ctype black
+limits 9 14 7 11
+box
+set mh=lg(mh)
+set mgal=lg(mgal)
+set mgas=lg(mgas)
+ltype 1
+connect mh mgal
+ltype 0
+connect mh mgas
+
+# get the behroozi relation
+define ff (sprintf('%.2f',redshift[$i]))
+data BEHROOZI_SHMR/shmr_z"$ff".dat
+read { mx 1 fx 2 }
+set mgx = mx + fx
+ctype red
+connect mx mgx
+
+# what happens if i interp2 this?
+interp2 mx mgx mh mgx2
+# let's check that we're not larger than baryon fraction
+# for z=8, trancate the Mstar relation at Mh>10.5
+if(redshift[$i]>7.9) { 
+    set mgx2 = (mh>10.5) ? lg(0.1*fbar*10**mh) : mgx2
+}
+
+ltype 2
+connect mh mgx2
+ltype 0
+
+
+set mgx = mgx2
+set mx = mh
+
+set mgx = 10**mgx
+set mx = 10**mx
+set fstarx = mgx/(fbar*mx)
+ctype green
+set mgasx = mgx*(mgx/ms)**-0.7
+# -- new Mgas relation
+set mgasx = (mgx>10**9) ? mgx*(mgx/10**9)**-0.68*(1+zz)**2.8 : mgx*(mgx/10**9)**-0.19*(1+zz)**2.8
+set fgx = mgasx/(fbar*mx)
+# check to make sure we don't have too much gas
+set mgasx = (fgx+fstarx>1) ? fbar*mx*(1-fstarx) : mgasx
+# check that we're not larger than f_in
+set mgasx = (fgx+fstarx>f_in) ? f_in*mx*fbar*(1-fstarx) : mgasx
+
+set fgx = mgasx/(fbar*mx)
+connect (lg(mx)) (lg(mgasx))
+
+if(1){
+
+set fg = lg(fg)
+set fstar = lg(fstar)
+set f_in = lg(f_in)
+
+ctype black
+fourwinx11 2
+limits 9 14 -2.5 0.5
+box
+
+connect mh fg
+ltype 1
+connect mh fstar
+ltype 0
+
+ctype blue
+connect mh f_in
+
+ctype green
+connect (lg(mx)) (lg(fgx))
+ctype red
+connect (lg(mx)) (lg(fstarx))
+
+
+set mux = lg(fstar/(fstar + fg))
+ctype blue
+#connect mh mux
+ctype black
+
+# output for lookup table
+#set fg = 10**fgx
+#set fs = 10**fstarx
+set mh = 10**mh
+print + behroozi_lookup.dat { mx fgx fstarx }
+}
+
+}
+
+if(0){
+fourwinx11 2
+set mgas=lg(mgas)
+set mgal = lg(mgal)
+limits 9 12 4 11
+box
+connect mh mgas
+ltype 1
+connect mh mgal
+ltype 0
+}

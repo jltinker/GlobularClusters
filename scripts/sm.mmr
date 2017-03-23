@@ -1,0 +1,30 @@
+ctype black
+lweight 4
+expand 2
+putwin 1 1 9 9
+xtcolours
+
+limits 7.8 11.4 7 9.3
+box
+
+set m=8.5, 11.2, 0.01
+
+ctype red
+set A = -0.0864
+set m0 = { 11.18 11.57 12.38  12.28 }
+set m0 = m0 - lg(1.7)
+set m0[3] = 12.28
+set k0 = { 9.04 9.04 8.99 8.69 }
+
+do i = 0,dimen(m0)-1 {
+set z = A*(m - m0[$i])**2 + k0[$i]
+connect m z
+}
+
+
+ctype black
+set zz = { 0.07 0.7 2.2 3.5 }
+do i=0,dimen(zz)-1{
+set z = 0.4*lg(10**m/10**10.5) - 0.216*2.8*lg(1+zz[$i]) + 9.35 
+connect m z
+}

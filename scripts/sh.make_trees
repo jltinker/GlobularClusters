@@ -1,0 +1,30 @@
+#! /bin/tcsh -f
+set echo
+
+wc mass_index.dat > nlines.dat
+set ntot  = `awk '{print($1)}' nlines.dat`
+echo $ntot
+set i = 1
+
+while ( $i <= $ntot )
+
+head -$i mass_index.dat | tail -1 > xx.dat
+set m  = `awk '{print($2)}' xx.dat`
+sed s/MMM/$m/g user_prm.template > temp1
+sed s/RRR/$i/g temp1 > temp2
+set m  = `awk '{print($1)}' xx.dat`
+sed s/MLO/$m/g temp2 > user_prm.txt
+#cd CHINCHILLA_TREES
+merger_tree
+set j = 1
+while ( $j <=  1 )
+mv output_fulltree$j.txt fulltree_$i.$j
+@ j = $j + 1
+end
+
+#cd ..
+
+@ i = $i + 1
+end
+exit
+

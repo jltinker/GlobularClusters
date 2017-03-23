@@ -1,0 +1,11 @@
+#! /bin/tcsh -f
+set echo
+
+set i = 396
+while ( $i <= 1000 )
+awk '{if($1>5.0E+3)print($3)}' gc_population_$i.out > in.dat
+../GMM/gmm in.dat 0 -1.8 -0.8 | grep TEST > bimodal_$i.out
+exit
+@ i = $i + 1
+end
+exit

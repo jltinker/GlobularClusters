@@ -1,0 +1,10 @@
+
+This is a log-file including all versions and bug-fixes of 
+the merger-tree algorithm, as described by Neistein & Dekel (2007).
+
+
+
+Date:  Aug-13-2007
+Version: 1.0
+Description:  First release
+

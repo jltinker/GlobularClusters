@@ -1,0 +1,12 @@
+M0 			1e14
+ntrees 			1
+nsteps 			100
+mmin 			1.72e10
+Omega_M 		0.25
+Gamma_shape 		0.169
+sigma8 			0.8
+main_flag 		0
+save_mode 		2
+random_with_time  	1
+hist_var 		1
+histogram_bins 		100

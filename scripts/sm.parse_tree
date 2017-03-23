@@ -1,0 +1,151 @@
+expand 1
+lweight 1
+ctype black
+local define print_noheader 1
+
+do iii=MMM,1000,20 {
+
+data fulltree_$iii.1
+read { indx 1 m 2 i1 5 z 6 iz 4 }
+set iz = int(iz)
+set m=lg(m)
+limits z m
+box
+#points z m
+##connect z m
+xtcolours
+
+# find all the halos
+set halolist = i1*0-1
+set halonlist = halolist
+set finalmass = halolist*0
+set haloindx = halolist
+set halolist[0] = 0
+set halonlist[0] = 1
+set haloindx[0] = 0
+set finalmass[0] = m[0]
+set n = 1
+do i=1,dimen(i1)-1 {
+    if(i1[$i]==i1[$i-1]) {
+	set halolist[n] = $i
+	set halonlist[n] = n+1
+	set finalmass[n] = 10**m[$i]
+	set haloindx[n] = indx[$i]
+	set n = n + 1
+	}
+}
+echo $(n)
+set nhalo = n
+
+set haloid = halolist*0
+do j=0,n-1 {
+set id =  halolist[$j]
+set ii = int(m*0)
+set ii[id] = 1
+do i=1,dimen(i1)-1 { 
+if(i1[$i]==id) {
+    set ii[$i] = 1
+    set id = $i
+#    echo $(id)
+}
+}
+#echo $j
+set haloid = (ii==1) ? (halolist[$j])  : haloid
+ctype red
+set ix = indx if(ii==1)
+set x = z if(ii==1)
+set y = m if(ii==1)
+#connect x y
+}
+
+# now go back to the original list and see what halos go into what other halos
+set halodesc = haloid*0 -1
+set halodesc[0] = 0
+set n = 1
+do i=1,dimen(i1)-1 {
+if(i1[$i]==i1[$i-1]) {
+    define j 1
+    while{1} { 
+	if(abs(i1[$i]-i1[$i-$j-1])>0) { break }
+	define j $($j + 1)
+    }
+    set halodesc[n] = haloid[$i-$j]
+    set n = n + 1
+}
+}
+echo $(n)
+set halolist = halolist if(halolist>-1)
+set halodesc = halodesc if(halodesc>-1)
+set halonlist = halonlist if(halonlist>-1)
+
+lweight 4
+set hh = { 0 5 16 18 23 72 7 }
+set cc = { red darkorange gold green blue purple black }
+
+expand 3
+ptype 30 3
+
+do j=0,-dimen(halodesc)-1 {
+
+do i=0,dimen(hh)-1 {
+if(halodesc[$j]==hh[$i]) {
+set x = z if(haloid==halolist[$j])
+set y = m if(haloid==halolist[$j])
+ctype $(cc[$i])
+#connect x y
+}
+if(halolist[$j]==hh[$i]) {
+set x = z if(haloid==halolist[$j])
+set y = m if(haloid==halolist[$j])
+ctype $(cc[$i])
+#points (x[0]) (y[0])
+}
+}
+}
+
+set m = 10**m
+
+# okay what are the things to output
+# for each halo: id, ndata, M_final, z_start, z_end, halo_descendent
+
+# double check this-- if the number of entries for the main branch isn't 101
+set ii = m if(haloid==0)
+set nz = 101
+
+# can we reparse the haloids to be in linear order?
+set xx = -halolist
+sort { xx }
+set max = -xx[0]+1
+set ii = 1,max,1
+set ii = ii*0
+set ii[halolist] = halonlist
+set halondesc = halonlist
+set halondesc = ii[halodesc]
+
+#print { halolist halodesc halonlist halondesc }
+
+print parsed_tree$iii.dat { nhalo nz } 
+
+# get the redshift binning
+data redshift.dat
+read { redshift 1 ired 3 }
+print + parsed_tree$iii.dat { ired redshift }
+
+do i=0,nhalo-1 {
+set pp = -999
+set id = halonlist[$i]
+set x = z if(haloid==halolist[$i])
+set y = m if(haloid==halolist[$i])
+set ii = iz if(haloid==halolist[$i])
+set n = dimen(x)
+set b = halondesc[$i]
+set zi = x[dimen(x)-1]
+set zf = x[0]
+set mi = y[dimen(y)-1]
+set mf = y[0]
+print + parsed_tree$iii.dat { pp id n mf mi zf zi b }
+print + parsed_tree$iii.dat '%.4f %.4e %d\n' { x y ii }
+}
+
+
+}

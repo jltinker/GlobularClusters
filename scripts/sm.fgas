@@ -1,0 +1,114 @@
+ctype black
+lweight 3.5
+expand 1.2
+putwin 1 1 9 9
+xtcolours
+
+local define print_noheader 1
+
+set fbar = 0.15
+set zz = 6
+
+fourwinx11 1
+limits 9 12 -2.5 0.2
+ticksize -1 10 -1 10
+box
+
+set redshift = 0,9,0.1
+set mh = 7,15,0.1
+set a = dimen(redshift)
+set b = dimen(mh)
+
+print fgas_lookup.dat { a b }
+print + fgas_lookup.dat { redshift }
+
+
+do i=0,dimen(redshift)-1 { 
+set zz = redshift[$i]
+set mh = 7,15,0.1
+set mh = 10**mh
+
+set mc = 3.6e9*exp(-0.6*(1+zz))/0.7
+set mcmin = 1.5e10*sqrt(0.3*(1+zz)**3 + 0.7)**-1*200**-0.5/0.7
+set mc = (mc<mcmin) ? mcmin : mc
+
+set f_in = 1/(1 + mc/mh)**3
+
+set fstar = 0.32*(mh/1e12)**0.1*(1+zz)**-2
+#alternate fstar
+#set fstar = 0.32*(mh/1e12)**0.5*(1+zz)**-1
+
+set fstar = (fstar>f_in) ? f_in : fstar
+
+
+set mstar = fstar*fbar*mh
+set ms = 10**(9.6+0.35*zz)
+set mgas = mstar*(mstar/ms)**-0.7
+set fg = mgas/(fbar*mh)
+# check to make sure we don't have too much gas
+set mgas = (fg>1) ? fbar*mh : mgas
+set fg = mgas/(fbar*mh)
+
+set fg1 = fg
+set fstar1 = fstar
+
+# what is mass at which ftot>fin?
+set x = -((fg1+fstar1)-f_in)
+set lmh = lg(mh)
+set a = 0.0
+interp2 x lmh a mcrit
+interp2 lmh fstar mcrit fstar_c
+interp2 lmh fg mcrit fg_c
+set mucrit = fstar_c/(fg_c+fstar_c)
+echo $(mcrit) $(fstar_c) $(fg_c) $(mucrit)
+#set fg = (lmh<mcrit) ? f_in/(1+(mucrit**-1-1)) : fg
+#set fstar = (lmh<mcrit) ? f_in-fg : fstar
+
+set fstar = (lmh<mcrit) ? f_in/(1+(mucrit**-1-1)) : fstar
+set fstar = (fstar>fstar1) ? fstar1 : fstar
+set fg = (lmh<mcrit) ? f_in-fstar : fg
+
+# now convert these to galaxy and gas masses
+set mgal = fstar*mh*fbar
+set mgas = fg*mh*fbar
+
+
+#set fg = (fg1 + fstar1 > f_in) ? f_in  : fg1
+#set fstar = (fg1 + fstar1 > f_in) ? f_in - fg1 : fstar1
+
+set mh = lg(mh)
+set fg = lg(fg)
+set fstar = lg(fstar)
+set f_in = lg(f_in)
+
+connect mh fg
+ltype 1
+connect mh fstar
+ltype 0
+ctype red
+#connect mh f_in
+ctype black
+
+set mux = lg(fstar/(fstar + fg))
+ctype blue
+#connect mh mux
+ctype black
+
+# output for lookup table
+set fg = 10**fg
+set fs = 10**fstar
+set mh = 10**mh
+print + fgas_lookup.dat { mh fg fs }
+
+}
+
+fourwinx11 2
+set mgas=lg(mgas)
+set mgal = lg(mgal)
+limits 9 12 4 11
+box
+connect mh mgas
+ltype 1
+connect mh mgal
+ltype 0
+
