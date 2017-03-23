@@ -4,28 +4,10 @@
 #include <math.h>
 #include "cutil.h"
 #include "nrutil.h"
+#include "hdr.h"
 
 #define NUM_GC 100000
 
-//cosomology
-float HUBBLE = 70;
-float OMEGA_M = 0.3;
-float BARYON_FRACTION = 0.15;
-
-// options
-int SWITCH_FGAS = 1;
-int SWITCH_DYNAMICAL_FRICTION = 1;
-int SINGLE_GC_POPULATION = 0;
-int MERGER_GROWTH = 1;
-int DISK_GROWTH = 0;
-int MURATOV_LOOKUP = 0;
-int MSTAR_SCATTER = 1;
-int MGAS_SCATTER = 1;
-
-// other globals
-float MGC;
-float MIN_GC_MASS = 1.0E+5;
-long IDUM = 555;
 
 struct TREE1 {
   int nhalo;
@@ -91,8 +73,11 @@ int main(int argc, char **argv)
   srand48(555);
   IDUM = 555;
 
+  //get the input parameters
+  input_params(argv);
+
   // read in the parsed tree
-  read_tree(argv[1]);
+  read_tree(argv[2]);
   
   //evolve the tree forward in time
   evolve_tree();
@@ -192,11 +177,11 @@ void evolve_tree()
 
 		      //printf("%3d %10d %10d %f %f %e %e\n",i,itarg,j,t.redshift[i],m2/m1,m1,m2);
 		      // is mass ratio high enough? 
-		      if(m2/m1>0.2)
+		      if(m2/m1>MERGER_RATIO)
 			{
-			  dm = 3.0E6*(t.gasmass[itarg][i] + t.gasmass[j][i])/BARYON_FRACTION/1.0E11*15*
-			    pow((1+t.redshift[i])/(1+4.3),1.0)*
-			    pow(t.mass[itarg][i]/1.0E11,-0.5);
+			  dm = 3.0E6*(t.gasmass[itarg][i] + t.gasmass[j][i])/BARYON_FRACTION/1.0E11*MERGER_EFFICIENCY*
+			    pow((1+t.redshift[i])/(1+4.3),1.0)* // no z-evolution
+			    pow(t.mass[itarg][i]/MERGER_EFF_EVOLUTION_PIVOT,MERGER_EFF_EVOLUTION_SLOPE); // yes mass evolution
 			  if(dm<1.0E+5)dm=0;
 			  if(dm==0)continue;
 			  t.gc[itarg] += dm;
@@ -214,9 +199,9 @@ void evolve_tree()
 		SKIP_MERGERS:
 		  if(DISK_GROWTH)
 		    {
-		      if(t.gasmass[j][i]/(BARYON_FRACTION*t.mass[j][i])>0.8)
+		      if(t.gasmass[j][i]/(BARYON_FRACTION*t.mass[j][i])>DISK_THRESHOLD)
 			{
-			  dm = 3.06E6*(t.gasmass[j][i])/BARYON_FRACTION/1.0E11*5*
+			  dm = 3.06E6*(t.gasmass[j][i])/BARYON_FRACTION/1.0E11*DISK_EFFICIENCY*
 			    fabs(t.lookback_time[i-1]-t.lookback_time[i])/0.1;
 			  if(dm<1.0E+5)dm=0;
 			  if(dm==0)continue;
@@ -477,7 +462,7 @@ float fgas_lookup(float redshift, float mass)
 
   // add in scatter in the gas fractions if needed
   if(MGAS_SCATTER)
-    mdev = gasdev(&IDUM)*0.2*log(10);
+    mdev = gasdev(&IDUM)*MGAS_SCATTER_VALUE*log(10);
   else
     mdev = 0;
   return(exp(fg+mdev));
@@ -537,7 +522,7 @@ float mstar_lookup(float redshift, float mass)
 
   // add in scatter in the SHMR if required
   if(MSTAR_SCATTER)
-    mdev = gasdev(&IDUM)*0.2*log(10);
+    mdev = gasdev(&IDUM)*MSTAR_SCATTER_VALUE*log(10);
   else
     mdev = 0;
 

@@ -43,8 +43,10 @@ extern long ISEED = 555;
 
 int input_params(char **argv)
 {
+  int n;
   FILE *fp;
   char aa[1000];
+  float x1;
 
   fp = openfile(argv[1]);
 
