@@ -122,7 +122,6 @@ void evolve_tree()
 	}
 
     }
-  fprintf(stderr,"here\n");
 
   // need to walk the tree again and figure out which halos make it into the main
   for(i=2;i<=nhalo;++i)
@@ -181,7 +180,7 @@ void evolve_tree()
 			{
 			  dm = 3.0E6*(t.gasmass[itarg][i] + t.gasmass[j][i])/BARYON_FRACTION/1.0E11*MERGER_EFFICIENCY*
 			    pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE); // redshift evolution
-			    pow((1+t.redshift[i])/(1+MERGER_EFF_EVOLUTION_PIVOT),MERGER_EFF_EVOLUTION_SLOPE); // redshift evolution
+			    pow((1+t.redshift[i])/(1+MERGER_EFF_EVOLUTION_PIVOT),MERGER_EFF_EVOLUTION_SLOPE); // mass evolution
 			  if(dm<1.0E+5)dm=0;
 			  if(dm==0)continue;
 			  t.gc[itarg] += dm;
@@ -202,7 +201,9 @@ void evolve_tree()
 		      if(t.gasmass[j][i]/(BARYON_FRACTION*t.mass[j][i])>DISK_THRESHOLD)
 			{
 			  dm = 3.06E6*(t.gasmass[j][i])/BARYON_FRACTION/1.0E11*DISK_EFFICIENCY*
-			    fabs(t.lookback_time[i-1]-t.lookback_time[i])/0.1;
+			    fabs(t.lookback_time[i-1]-t.lookback_time[i])/0.1*
+			    pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE); // redshift evolution
+			    pow((1+t.redshift[i])/(1+MERGER_EFF_EVOLUTION_PIVOT),MERGER_EFF_EVOLUTION_SLOPE); // redshift evolution
 			  if(dm<1.0E+5)dm=0;
 			  if(dm==0)continue;
 			  t.gc[itarg] += dm;
@@ -231,11 +232,11 @@ void evolve_tree()
     if(gc.mass[i]>0)mgc+=gc.mass[i];
   fclose(fp);
 
-  if(t.gc[1]>0)
+  if(mgc>0)
     fprintf(stdout,"%e %e %e %e %f %f\n",t.mass[1][1],mgc,t.mstar[1][1],t.gasmass[1][1],
 	    t.gc_age[1]/t.gc[1],t.metallicity[1]/t.gc[1]);
-  else
-    fprintf(stdout,"%e %e %e %e %f %f\n",t.mass[1][1],t.gc[1],t.mstar[1][1],t.gasmass[1][1],0.0,0.0);
+  // else
+    //fprintf(stdout,"%e %e %e %e %f %f\n",t.mass[1][1],t.gc[1],t.mstar[1][1],t.gasmass[1][1],0.0,0.0);
 
 }
 
@@ -374,7 +375,7 @@ void read_tree(char *fname)
     t.lookback_time[i] = lookback_time(t.redshift[i]);
 
   // allocate memory for the full tree
-  fprintf(stderr,"Allocation [%.2f] MBytes for tree\n",2*t.nhalo*t.nz*sizeof(float)/1024./1024.);
+  //fprintf(stderr,"Allocation [%.2f] MBytes for tree\n",2*t.nhalo*t.nz*sizeof(float)/1024./1024.);
   t.mass = matrix(1,nhalo,1,nz);
   t.mstar = matrix(1,nhalo,1,nz);
   t.gasmass = matrix(1,nhalo,1,nz);
