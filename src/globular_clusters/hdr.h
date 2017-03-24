@@ -1,5 +1,13 @@
 #include <stdlib.h>
-#include "cutil.h"
+#include <stdio.h>
+#include <string.h>
+
+/* Some function prototypes
+ */
+int filesize(FILE *fp);
+FILE *openfile(char *ff);
+int ***i3tensor(long nrl, long nrh, long ncl, long nch, long ndl, long ndh);
+
 
 /* Global variables
  */
@@ -22,13 +30,14 @@ extern int MGAS_SCATTER;
 // free parameters
 extern float MERGER_EFFICIENCY; // boost factor for making GCs in mergers
 extern float MERGER_RATIO ; // galaxy mass ratio required for making GCs in merger
-extern float MERGER_EFF_EVOLUTION_PIVOT; // mass dependence of merger efficiency, pivot point
-extern float MERGER_EFF_EVOLUTION_SLOPE; // mass dependence of merger efficiency, slope
+extern float MERGER_EFF_EVOLUTION_PIVOT; // redshift dependence of merger efficiency, pivot point
+extern float MERGER_EFF_EVOLUTION_SLOPE; // redshift dependence of merger efficiency, slope
+extern float MERGER_EFF_MASS_PIVOT; // mass dependence of merger efficiency, pivot point
+extern float MERGER_EFF_MASS_SLOPE; // mass dependence of merger efficiency, slope
 extern float DISK_EFFICIENCY; // boost factor for making GCs in gas-rich disks
 extern float DISK_THRESHOLD; // threshold in fgas for making GCs in disks
 extern float MSTAR_SCATTER_VALUE; // scatter in stellar mass at fixed halo mass (log10)
 extern float MGAS_SCATTER_VALUE; // scatter in gas mass at fixed halo mass (log10)
-
 
 // other globals 
 extern long IDUM;

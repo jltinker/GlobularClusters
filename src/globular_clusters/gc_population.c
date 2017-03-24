@@ -180,8 +180,8 @@ void evolve_tree()
 		      if(m2/m1>MERGER_RATIO)
 			{
 			  dm = 3.0E6*(t.gasmass[itarg][i] + t.gasmass[j][i])/BARYON_FRACTION/1.0E11*MERGER_EFFICIENCY*
-			    pow((1+t.redshift[i])/(1+4.3),1.0)* // no z-evolution
-			    pow(t.mass[itarg][i]/MERGER_EFF_EVOLUTION_PIVOT,MERGER_EFF_EVOLUTION_SLOPE); // yes mass evolution
+			    pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE); // redshift evolution
+			    pow((1+t.redshift[i])/(1+MERGER_EFF_EVOLUTION_PIVOT),MERGER_EFF_EVOLUTION_SLOPE); // redshift evolution
 			  if(dm<1.0E+5)dm=0;
 			  if(dm==0)continue;
 			  t.gc[itarg] += dm;
