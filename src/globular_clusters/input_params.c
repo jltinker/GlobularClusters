@@ -43,6 +43,7 @@ int input_params(char **argv)
   fscanf(fp,"%f",&MERGER_EFF_EVOLUTION_SLOPE);gl(); 
   fscanf(fp,"%f",&MERGER_EFF_MASS_PIVOT);gl(); 
   fscanf(fp,"%f",&MERGER_EFF_MASS_SLOPE);gl(); 
+  fscanf(fp,"%f",&MERGER_RATIO_POWER);gl(); 
   fscanf(fp,"%f",&MSTAR_SCATTER_VALUE);gl(); 
   fscanf(fp,"%f",&MGAS_SCATTER_VALUE);gl(); 
 

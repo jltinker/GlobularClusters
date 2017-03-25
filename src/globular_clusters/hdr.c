@@ -25,6 +25,7 @@ float MERGER_EFF_MASS_PIVOT = 3.0E11; // mass dependence of merger efficiency, p
 float MERGER_EFF_MASS_SLOPE = -0.5; // mass dependence of merger efficiency, slope
 float DISK_EFFICIENCY = 5; // boost factor for making GCs in gas-rich disks
 float DISK_THRESHOLD = 0.9; // threshold in fgas for making GCs in disks
+float MERGER_RATIO_POWER = 0; // power law slope for merger_ratio efficiency
 float MSTAR_SCATTER_VALUE = 0.2; // scatter in stellar mass at fixed halo mass (log10)
 float MGAS_SCATTER_VALUE = 0.2; // scatter in gas mass at fixed halo mass (log10)
 

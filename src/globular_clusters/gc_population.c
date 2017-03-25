@@ -179,6 +179,7 @@ void evolve_tree()
 		      if(m2/m1>MERGER_RATIO)
 			{
 			  dm = 3.0E6*(t.gasmass[itarg][i] + t.gasmass[j][i])/BARYON_FRACTION/1.0E11*MERGER_EFFICIENCY*
+			    pow(m2/m1,MERGER_RATIO_POWER)* //dependence on merger ratio
 			    pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE); // redshift evolution
 			    pow((1+t.redshift[i])/(1+MERGER_EFF_EVOLUTION_PIVOT),MERGER_EFF_EVOLUTION_SLOPE); // mass evolution
 			  if(dm<1.0E+5)dm=0;
@@ -193,7 +194,7 @@ void evolve_tree()
 				    t.gasmass[itarg][i],t.gasmass[j][i],dm,t.gc[itarg],
 				    t.gc[itarg]/t.mstar[itarg][i]);
 			}
-		      continue;
+		      continue; // if we're engaged in a merger, no disk growth.
 		    }
 		SKIP_MERGERS:
 		  if(DISK_GROWTH)
