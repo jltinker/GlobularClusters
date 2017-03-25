@@ -50,5 +50,8 @@ int input_params(char **argv)
   fscanf(fp,"%ld",&IDUM);gl(); 
   fscanf(fp,"%ld",&ISEED);gl(); 
   
+  // check input:
+  if(MERGER_EFF_MASS_PIVOT < 100)
+    MERGER_EFF_MASS_PIVOT = pow(10.0,MERGER_EFF_MASS_PIVOT);
 
 }
