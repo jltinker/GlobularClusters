@@ -92,7 +92,7 @@ void evolve_tree()
 {
   FILE *fp;
   int i, ip, flag=1, j, nhalo, nmerge=0,itarg;
-  float m1, m2, dm, mgc;
+  float m1, m2, dm, mgc, fgc;
 
 
   nhalo = t.nhalo;
@@ -221,20 +221,22 @@ void evolve_tree()
   // let output the population
   fp = fopen("gc_population.out","w");
   for(i=1;i<=gc.n;++i)   
-    {
+    {      
       gc.mass[i]=dynamically_evolve(gc.minit[i],gc.age[i]);
       if(gc.mass[i]>3.0E+3)
 	fprintf(fp,"%e %e %f %f %e %e %f %d %7d\n",gc.mass[i], 
 		gc.minit[i],gc.FeH[i],gc.age[i],gc.mgal[i],gc.mhalo[i],gc.redshift[i], gc.mode[i], gc.ihalo[i]);
     }
-  mgc =0 ;
+  mgc = fgc =0 ;
   for(i=1;i<=gc.n;++i)   
     if(gc.mass[i]>0)mgc+=gc.mass[i];
+  for(i=1;i<=gc.n;++i)   
+    if(gc.mass[i]>0)fgc+=gc.mass[i]*(gc.mode[i]-1);
   fclose(fp);
 
   if(mgc>0)
-    fprintf(stdout,"%e %e %e %e %f %f\n",t.mass[1][1],mgc,t.mstar[1][1],t.gasmass[1][1],
-	    t.gc_age[1]/t.gc[1],t.metallicity[1]/t.gc[1]);
+    fprintf(stdout,"%e %e %e %e %f %f %f\n",t.mass[1][1],mgc,t.mstar[1][1],t.gasmass[1][1],
+	    t.gc_age[1]/t.gc[1],t.metallicity[1]/t.gc[1], fgc/mgc);
   // else
     //fprintf(stdout,"%e %e %e %e %f %f\n",t.mass[1][1],t.gc[1],t.mstar[1][1],t.gasmass[1][1],0.0,0.0);
 
