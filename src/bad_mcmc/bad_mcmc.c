@@ -49,7 +49,7 @@ int main(int argc, char **argv)
   float scatterprev, ageprev;
   int niter=0, NSTEP_MAX=1000000,n=3, i, NSTEP_CONVERGE=10000, NSTEP_BURN=2000, OUTPUT=1, nlines;
   FILE *fp, *fp1;
-  long IDUM=-555;
+  long IDUM=-556;
 
   int nstep=0, nacc=0, ndim, nrot, k, j;
   float **cov1,**tmp,*a,*avg1,stepfac_burn,prior1[10],prior2[10],xx[100],
@@ -122,26 +122,27 @@ int main(int argc, char **argv)
 
   // priors
   prior1[1] = 0; 
-  prior2[1] = 10.0;
+  prior2[1] = 1000.0;
   prior1[2] = 0.0;
-  prior2[2] = 5.0;
+  prior2[2] = 1.0;
   prior1[3] = 0.0;
-  prior2[3] = 5.0;
+  prior2[3] = 10000.0;
   prior1[4] = 0;
-  prior2[4] = 5.0;
+  prior2[4] = 1.0;
       
 
   // is there an input file for the parameters?
-  if(argc>5)
+  if(argc>6)
     {
-      fp1 = openfile(argv[5]);
-      for(i=1;i<=n+5;++i)
+      fp1 = openfile(argv[6]);
+      for(i=1;i<=n+3;++i)
 	fscanf(fp1,"%f",&xx[i]);
       for(i=1;i<=n;++i)
-	a[i] = xx[i+5];
-      fprintf(stderr,"input_model [%s]: ",argv[7]);
+	a[i] = xx[i+3];
+      fprintf(stderr,"input_model [%s]: ",argv[6]);
       for(i=1;i<=n;++i) fprintf(stderr," %e",a[i]);
       fprintf(stderr,"\n");
+      //exit(0);
     }
 
   chi2 = chi2func(a,n);
@@ -270,13 +271,19 @@ float chi2func(float *a, int n)
   FILE *fp;
   int i,j,nbin=100,n1;
   double x, y, e, chi2=0;
+  static int niter =0;
 
   // first, need to make a batch file
   fp = fopen("gc.bat","w");
   for(j=0,i=1;i<=ntotal;++i)
     {
-      if(ifree[i])fprintf(fp,"%e\n",a[++j]);
-      else fprintf(fp,"%e\n",atotal[i]);
+      if(i>=4 && i<=11)
+	fprintf(fp,"%.0f\n",atotal[i]);
+      else
+	{
+	  if(ifree[i])fprintf(fp,"%e\n",a[++j]);
+	  else fprintf(fp,"%e\n",atotal[i]);
+	}
     }
   fclose(fp);
   
@@ -286,6 +293,8 @@ float chi2func(float *a, int n)
   // now read in the result and get a chi^2
   fp = openfile("gcmass.dat");
   n1 = filesize(fp);
+  // check! if size of file too small!
+  if(n1<600)return 1.0E+7;
   for(i=1;i<=n1;++i)
     {
       fscanf(fp,"%f %f",&mh[i], &gc[i]);
@@ -295,23 +304,30 @@ float chi2func(float *a, int n)
 
   // bin the relation to get the mean relation
   j =0;
+  x = y = e = 0;
   for(i=1;i<=n1;++i)
     {
       if(j==nbin) 
 	{ 
 	  x = x/nbin;
 	  y = y/nbin;
-	  e = (e/nbin-y*y)/(nbin-1); // error in the mean
-	  chi2 += ((y-x) + 4.4)*((y-x) + 4.4)/e;
-	  //printf("%e %e %e %e\n",x,y,e,y-x);
+	  e = (e/nbin-y*y)/(nbin-1)*4; // error in the mean (with some buffer)
+	  //if(e<0)continue;
+	  chi2 += ((y-x) + 4.4)*((y-x) + 4.4)/(e+0.1*0.1);
+	  printf("CHIxx %e %e %e %e\n",x,y,e,y-x);
 	  x = y = e = j = 0;
 	}
       x += log10(mh[i]);
       y += log10(gc[i]);
       e += log10(gc[i])*log10(gc[i]);
+      //printf("CHI  %d %e %e %e %e %f %f\n",j+1,x,y,e,log10(mh[i]),log10(gc[i]));
       j++;
     }
-  //fprintf(stderr,"CHI2 %e\n",chi2);
+  //fprintf(stdout,"CHI2 %d %e\n",niter++,chi2);fflush(stdout);
+  //if(niter==2)exit(0);
+  //if(chi2<0)exit(0);
+  if(chi2<0)return 1.0E+7;
+  
   return chi2;
 }
 
@@ -320,7 +336,7 @@ float chi2func(float *a, int n)
 int prior_violation(int n, float *a, float *p1, float *p2)
 {
   int i;
-  return 0;
+  
   for(i=1;i<=n;++i)
     {
       if(a[i]<=p1[i])return -i;
