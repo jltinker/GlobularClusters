@@ -36,6 +36,7 @@ extern float MERGER_EFF_MASS_PIVOT; // mass dependence of merger efficiency, piv
 extern float MERGER_EFF_MASS_SLOPE; // mass dependence of merger efficiency, slope
 extern float DISK_EFFICIENCY; // boost factor for making GCs in gas-rich disks
 extern float DISK_THRESHOLD; // threshold in fgas for making GCs in disks
+extern float MERGER_RATIO_POWER;
 extern float MSTAR_SCATTER_VALUE; // scatter in stellar mass at fixed halo mass (log10)
 extern float MGAS_SCATTER_VALUE; // scatter in gas mass at fixed halo mass (log10)
 
