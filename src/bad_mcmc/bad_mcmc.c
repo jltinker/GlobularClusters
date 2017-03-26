@@ -69,7 +69,7 @@ int main(int argc, char **argv)
       fscanf(fp,"%d",&j);fgets(aa,1000,fp);
       if(j){ n++; ifree[i] = 1; }
     }
-  fprintf(stderr,"Number of free parameters: %d\n",n);
+  fprintf(stdout,"Number of free parameters: %d\n",n);
   fclose(fp);
 
   // declare a bunch of vectors/matrices
@@ -102,8 +102,11 @@ int main(int argc, char **argv)
       fscanf(fp,"%f",&x1);fgets(aa,1000,fp);
       atotal[i] = x1;
       if(ifree[i]) { a[++j]=x1;
-	fprintf(stderr, "a[%d] = %e\n",j,a[j]); }
+	if(i==18) // that's the mass efficiency amplitude
+	  a[j] = log10(a[j]);
+	fprintf(stdout, "param a[%d] = %e\n",j,a[j]); }
     }
+  fflush(stdout);
   fclose(fp);
 
   if(argc>3)
@@ -129,7 +132,25 @@ int main(int argc, char **argv)
   prior2[3] = 10000.0;
   prior1[4] = 0;
   prior2[4] = 1.0;
-      
+
+  if(n==8) {
+    prior1[5] = 0;
+    prior2[5] = 10;
+    prior1[6] = -3;
+    prior2[6] = 3;
+    prior1[7] = 9;
+    prior2[7] = 14;
+    prior1[8] = -3.0;
+    prior2[8] = 3.0;
+  }
+  if(n==7) {
+    prior1[5] = -3;
+    prior2[5] = 3;
+    prior1[6] = -3.0;
+    prior2[6] = 3.0;
+    prior1[7] = -2;
+    prior2[7] = 2.0;
+  }
 
   // is there an input file for the parameters?
   if(argc>6)
@@ -139,9 +160,9 @@ int main(int argc, char **argv)
 	fscanf(fp1,"%f",&xx[i]);
       for(i=1;i<=n;++i)
 	a[i] = xx[i+3];
-      fprintf(stderr,"input_model [%s]: ",argv[6]);
-      for(i=1;i<=n;++i) fprintf(stderr," %e",a[i]);
-      fprintf(stderr,"\n");
+      fprintf(stdout,"input_model [%s]: ",argv[6]);
+      for(i=1;i<=n;++i) fprintf(stdout," %e",a[i]);
+      fprintf(stdout,"\n");
       //exit(0);
     }
 
@@ -281,12 +302,16 @@ float chi2func(float *a, int n)
 	fprintf(fp,"%.0f\n",atotal[i]);
       else
 	{
-	  if(ifree[i])fprintf(fp,"%e\n",a[++j]);
+	  if(ifree[i])
+	    {
+	      if(i==18)fprintf(fp,"%e\n",pow(10.0,a[++j]));
+	      else fprintf(fp,"%e\n",a[++j]);
+	    }
 	  else fprintf(fp,"%e\n",atotal[i]);
 	}
     }
   fclose(fp);
-  
+
   // now run the script
   system("./sh.tree_mcmc");
 
@@ -314,7 +339,7 @@ float chi2func(float *a, int n)
 	  e = (e/nbin-y*y)/(nbin-1)*4; // error in the mean (with some buffer)
 	  //if(e<0)continue;
 	  chi2 += ((y-x) + 4.4)*((y-x) + 4.4)/(e+0.1*0.1);
-	  printf("CHIxx %e %e %e %e\n",x,y,e,y-x);
+	  //printf("CHIxx %e %e %e %e\n",x,y,e,y-x);
 	  x = y = e = j = 0;
 	}
       x += log10(mh[i]);
@@ -323,7 +348,7 @@ float chi2func(float *a, int n)
       //printf("CHI  %d %e %e %e %e %f %f\n",j+1,x,y,e,log10(mh[i]),log10(gc[i]));
       j++;
     }
-  //fprintf(stdout,"CHI2 %d %e\n",niter++,chi2);fflush(stdout);
+  fprintf(stdout,"CHI2 %d %e\n",niter++,chi2);fflush(stdout);
   //if(niter==2)exit(0);
   //if(chi2<0)exit(0);
   if(chi2<0)return 1.0E+7;
