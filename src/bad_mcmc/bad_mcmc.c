@@ -31,11 +31,14 @@ float gasdev(long *idum);
 void jacobi(float **a, int n, float d[], float **v, int *nrot);
 void gaussj(float **a, int n, float **b, int m);
 void sort(unsigned long n, float arr[]);
+void spline(float x[], float y[], int n, float yp1, float ypn, float y2[]);
+void splint(float xa[], float ya[], float y2a[], int n, float x, float *y);
 
 /* local functions
  */
 float chi2func(float *a, int n);
 int prior_violation(int n, float *a, float *p1, float *p2);
+float bootstrap_variance(float *x, int n);
 
 /* global variables
  */
@@ -288,11 +291,20 @@ int main(int argc, char **argv)
 float chi2func(float *a, int n)
 {
   char aa[1000];
-  float mh[10000], gc[10000];
+  float mh[10000], gc[10000], *xx, *yy, *zz, xxx[1000], mgc, sig, sig_err, x1;
   FILE *fp;
-  int i,j,nbin=100,n1;
+  int i,j,nbin=100,n1, np,ibin;
   double x, y, e, chi2=0;
-  static int niter =0;
+  static int niter =0, flag =1;
+
+  // initialize the vectors for spline interp
+  if(flag)
+    {
+      xx = vector(1,100);
+      yy = vector(1,100);
+      zz = vector(1,100);
+      flag =0;
+    }
 
   // first, need to make a batch file
   fp = fopen("gc.bat","w");
@@ -328,17 +340,26 @@ float chi2func(float *a, int n)
   fclose(fp);
 
   // bin the relation to get the mean relation
-  j =0;
+  j = np = 0;
   x = y = e = 0;
   for(i=1;i<=n1;++i)
     {
-      if(j==nbin) 
+      if(j==nbin || i==n1) 
 	{ 
+	  nbin = j;
 	  x = x/nbin;
 	  y = y/nbin;
 	  e = (e/nbin-y*y)/(nbin-1)*4; // error in the mean (with some buffer)
+	  sig = sqrt((e/nbin-y*y));
+	  sig_err = bootstrap_variance(xx,j);
 	  //if(e<0)continue;
 	  chi2 += ((y-x) + 4.4)*((y-x) + 4.4)/(e+0.1*0.1);
+
+	  // tabulate the mean relation
+	  np++;
+	  xx[np] = x;
+	  yy[np] = y;
+
 	  //printf("CHIxx %e %e %e %e\n",x,y,e,y-x);
 	  x = y = e = j = 0;
 	}
@@ -348,12 +369,66 @@ float chi2func(float *a, int n)
       //printf("CHI  %d %e %e %e %e %f %f\n",j+1,x,y,e,log10(mh[i]),log10(gc[i]));
       j++;
     }
-  fprintf(stdout,"CHI2 %d %e\n",niter++,chi2);fflush(stdout);
+  nbin = 100;
+  printf("CHIFIT %e\n",chi2);
+
+  // initialize the spline
+  spline(xx,yy,np,1.0E+30,1.0E+30,zz);
+
+  // now go back through and get the scatter
+  j = 0;
+  ibin = 0;
+  for(i=1;i<=n1;++i)
+    {
+      if(j==nbin || i==n1) 
+	{ 
+	  ibin++;
+	  if(j==n1) nbin = j;
+	  sig = sqrt((e/nbin));
+	  sig_err = bootstrap_variance(xxx,j);
+	  e = j = 0;
+	  if(ibin<3 || ibin>9)continue;
+	  chi2 += (sig-0.2)*(sig-0.2)/(sig_err*sig_err + 0.05*0.05); // assume error of 0.05dex on scatter
+	  //printf("CHISIG %d %d %d %e %e %e\n",i,j,nbin,sig,sig_err,chi2);
+	}
+      // what is mean at this halo mass
+      splint(xx,yy,zz,np,log10(mh[i]),&mgc);
+      x1 = log10(gc[i]) - mgc;
+      //printf("TRIAL %d %f %f %f %f\n",j,x1,log10(gc[i]),log10(mh[i]),mgc);
+      xxx[j] = x1;
+      e += x1*x1;
+      j++;
+    }
+  
+
+  // fprintf(stdout,"CHI2 %d %e\n",niter++,chi2);fflush(stdout);
+  //exit(0);
   //if(niter==2)exit(0);
   //if(chi2<0)exit(0);
   if(chi2<0)return 1.0E+7;
   
   return chi2;
+}
+
+float bootstrap_variance(float *x, int n)
+{
+  int nb = 100, i, j, ii;
+  double e, ebar=0, evar=0;
+
+  for(i=1;i<=nb;++i)
+    {
+      e = 0;
+      for(j=0;j<n;++j)
+	{
+	  ii = (int)(drand48()*n);
+	  //if(i==1)printf("TRIAL %d %f\n",ii,x[ii]);
+	  e += x[ii]*x[ii];
+	}
+      e = sqrt(e/n);
+      evar += e*e;
+      ebar += e;
+    }
+  return sqrt(evar/nb-ebar*ebar/nb/nb);
 }
 
 /* check the priors

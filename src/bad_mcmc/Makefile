@@ -6,7 +6,7 @@ CC = gcc
 CFLAGS = -O2
 
 
-OBJS1 = bad_mcmc.o gasdev.o ran1.o gaussj.o jacobi.o
+OBJS1 = bad_mcmc.o gasdev.o ran1.o gaussj.o jacobi.o spline.o splint.o
 bad_mcmc:	$(OBJS1)
 	$(CC) -o $@ $(OBJS1) $(LIB)
 	cp -f $@ $(HOME)/exec/$@

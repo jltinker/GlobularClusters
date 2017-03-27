@@ -180,8 +180,10 @@ void evolve_tree()
 			{
 			  dm = 3.0E6*(t.gasmass[itarg][i] + t.gasmass[j][i])/BARYON_FRACTION/1.0E11*MERGER_EFFICIENCY*
 			    pow(m2/m1,MERGER_RATIO_POWER)* //dependence on merger ratio
-			    pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE); // redshift evolution
+			    pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE)* // redshift evolution
 			    pow((1+t.redshift[i])/(1+MERGER_EFF_EVOLUTION_PIVOT),MERGER_EFF_EVOLUTION_SLOPE); // mass evolution
+
+			    dm *= exp(gasdev(&IDUM)*0.2*log(10));
 			  if(dm<1.0E+5)dm=0;
 			  if(dm==0)continue;
 			  t.gc[itarg] += dm;
@@ -203,8 +205,9 @@ void evolve_tree()
 			{
 			  dm = 3.06E6*(t.gasmass[j][i])/BARYON_FRACTION/1.0E11*DISK_EFFICIENCY*
 			    fabs(t.lookback_time[i-1]-t.lookback_time[i])/0.1*
-			    pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE); // redshift evolution
+			    pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE)* // redshift evolution
 			    pow((1+t.redshift[i])/(1+MERGER_EFF_EVOLUTION_PIVOT),MERGER_EFF_EVOLUTION_SLOPE); // redshift evolution
+			  dm *= exp(gasdev(&IDUM)*0.2*log(10));
 			  if(dm<1.0E+5)dm=0;
 			  if(dm==0)continue;
 			  t.gc[itarg] += dm;
@@ -270,7 +273,11 @@ void monte_carlo_gc_population(float mgc, float mstar, float time, float redshif
   MGC = mgc;
 
   // get most massive cluster
-  mmax = zbrent(func_mmax, log(1.0E3), log(1.0E9), 1.0E-4);
+  mmax = zbrent(func_mmax, log(1.0E3), log(1.0E10), 1.0E-4);
+  if(mmax==0)
+    {
+      fprintf(stdout,"ZB %e %e %e\n",MGC,1.0E3*log(1.0E3/MGC),1.0E9*log(1.0E9/MGC));
+    }
   mmax = exp(mmax);
   n++;
   gc.minit[n] = mmax;
@@ -417,7 +424,7 @@ void read_tree(char *fname)
 float fgas_lookup(float redshift, float mass)
 {
   FILE *fp;
-  float fg1,fg2,fg,x1,x2,x3,mdev;
+  float fg1,fg2,fg,x1,x2,x3,mdev,fgx,fgy;
   int i,j,iz;
   static int flag = 1;
   static float *zz, *mh, **fgas;
@@ -455,14 +462,19 @@ float fgas_lookup(float redshift, float mass)
   if(iz>nz) { iz = nz; }
 
   // NGP in mass;
-  for(i=1;i<=nm;++i)
+  for(i=2;i<=nm;++i)
     if(mh[i]>mass || mh[nm]<mass) 
       { 
 	fg1 = fgas[iz][i]; 
 	fg2 = fgas[iz-1][i];
 	break; 
       }
-  fg = (fg1-fg2)/(zz[iz]-zz[iz-1])*(redshift-zz[iz-1]) + fg2;  if(MSTAR_SCATTER)
+  fgy = (fg1-fg2)/(zz[iz]-zz[iz-1])*(redshift-zz[iz-1]) + fg2;
+  fg1 = fgas[iz][i-1]; 
+  fg2 = fgas[iz-1][i-1];
+  fgx = (fg1-fg2)/(zz[iz]-zz[iz-1])*(redshift-zz[iz-1]) + fg2;
+
+  fg = (fgy-fgx)/(mh[i]-mh[i-1])*(mass-mh[i-1]) + fgx;
 
   // add in scatter in the gas fractions if needed
   if(MGAS_SCATTER)
@@ -476,7 +488,7 @@ float fgas_lookup(float redshift, float mass)
 float mstar_lookup(float redshift, float mass)
 {
   FILE *fp;
-  float fg1,fg2,fg,x1,x2,x3,mdev;
+  float fg1,fg2,fg,x1,x2,x3,mdev, fgx, fgy;
   int i,j,iz;
   static int flag = 1;
   static float *zz, *mh, **fgas;
@@ -515,14 +527,19 @@ float mstar_lookup(float redshift, float mass)
   if(iz>nz) { iz = nz; }
 
   // NGP in mass;
-  for(i=1;i<=nm;++i)
+  for(i=2;i<=nm;++i)
     if(mh[i]>mass || mass>mh[nm]) 
       { 
 	fg1 = fgas[iz][i]; 
 	fg2 = fgas[iz-1][i];
 	break; 
       }
-  fg = (fg1-fg2)/(zz[iz]-zz[iz-1])*(redshift-zz[iz-1]) + fg2;
+  fgy = (fg1-fg2)/(zz[iz]-zz[iz-1])*(redshift-zz[iz-1]) + fg2;
+  fg1 = fgas[iz][i-1]; 
+  fg2 = fgas[iz-1][i-1];
+  fgx = (fg1-fg2)/(zz[iz]-zz[iz-1])*(redshift-zz[iz-1]) + fg2;
+
+  fg = (fgy-fgx)/(mh[i]-mh[i-1])*(mass-mh[i-1]) + fgx;
 
   // add in scatter in the SHMR if required
   if(MSTAR_SCATTER)
