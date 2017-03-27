@@ -377,7 +377,7 @@ float chi2func(float *a, int n)
   // now go back through and get the scatter
   j = 0;
   ibin = 0;
-  for(i=1;i<=n1;++i)
+  for(i=1;i<=-n1;++i)
     {
       if(j==nbin || i==n1) 
 	{ 
