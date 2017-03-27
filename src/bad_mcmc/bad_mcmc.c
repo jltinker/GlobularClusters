@@ -39,18 +39,20 @@ void splint(float xa[], float ya[], float y2a[], int n, float x, float *y);
 float chi2func(float *a, int n);
 int prior_violation(int n, float *a, float *p1, float *p2);
 float bootstrap_variance(float *x, int n);
+int read_chain(float **chain, char *fname, int np);
 
 /* global variables
  */
 float atotal[100];
 int ifree[100], ntotal;
+int DIAGNOSTIC;
 
 int main(int argc, char **argv)
 {
   char aa[1000];
   float chi2=0, stepfac=1, chi2prev, chi2min = 1000, amin[10];
   float scatterprev, ageprev;
-  int niter=0, NSTEP_MAX=1000000,n=3, i, NSTEP_CONVERGE=10000, NSTEP_BURN=200, OUTPUT=1, nlines;
+  int niter=0, NSTEP_MAX=1000000,n=3, i, NSTEP_CONVERGE=10000, NSTEP_BURN=2000, OUTPUT=1, nlines;
   FILE *fp, *fp1;
   long IDUM=-556;
 
@@ -61,6 +63,7 @@ int main(int argc, char **argv)
   stepfac_burn = 0.1;
   stepfac = 0.4;
 
+    
 
   // read in what are free parameters
   fp = openfile(argv[1]);
@@ -118,6 +121,14 @@ int main(int argc, char **argv)
   if(argc>4)
     stepfac_burn = atof(argv[4]);
 
+  // are we doing a diagnostic test?
+  DIAGNOSTIC =0 ;
+  if(stepfac<0)
+    {
+      stepfac *= -1;
+      DIAGNOSTIC = 1;
+    }
+
   // open the output file for the mcmc
   if(argc>5)
     fp = fopen(argv[5],"w");
@@ -159,15 +170,16 @@ int main(int argc, char **argv)
   // is there an input file for the parameters?
   if(argc>6)
     {
-      fp1 = openfile(argv[6]);
-      for(i=1;i<=n+3;++i)
-	fscanf(fp1,"%f",&xx[i]);
-      for(i=1;i<=n;++i)
-	a[i] = xx[i+3];
-      fprintf(stdout,"input_model [%s]: ",argv[6]);
-      for(i=1;i<=n;++i) fprintf(stdout," %e",a[i]);
-      fprintf(stdout,"\n");
-      //exit(0);
+      if(fp1 = openfile(argv[6])) {
+	for(i=1;i<=n+3;++i)
+	  fscanf(fp1,"%f",&xx[i]);
+	for(i=1;i<=n;++i)
+	  a[i] = xx[i+3];
+	fprintf(stdout,"input_model [%s]: ",argv[6]);
+	for(i=1;i<=n;++i) fprintf(stdout," %e",a[i]);
+	fprintf(stdout,"\n");
+	//exit(0);
+      }
     }
 
   chi2 = chi2func(a,n);
@@ -179,27 +191,36 @@ int main(int argc, char **argv)
   chi2prev = chi2;
   ndim = n;
 
+  // are we reading in a previous chain?
+  if(stepfac_burn<0)
+    {
+      stepfac_burn*=-1;
+      nstep = read_chain(chain,argv[7],n);
+      NSTEP_CONVERGE=nstep+1;
+    }
+  
+
+
   while(nstep < NSTEP_MAX)
     {
-      //fprintf(stdout,"HERE1\n");fflush(stdout);
       for(i=1;i<=n;++i)
 	  aprev[i] = a[i];
 
-      //fprintf(stdout,"HERE2\n");fflush(stdout);
       // BURN IN: get the new proposal
       if(nstep<NSTEP_BURN)
 	{
+	  fprintf(stderr,"IN BURN\n");
 	  if(nstep>0)
 	    for(i=1;i<=n;++i) {
 	      a[i] = (1+gasdev(&IDUM)*start_dev[i]*stepfac_burn)*aprev[i];
 	    }
-	  //fprintf(stdout,"HERE3\n");fflush(stdout);
 	  goto SKIP1;
 	}
 
       //new proposal from covariance matrix
       if(nstep>=NSTEP_BURN && nstep<NSTEP_CONVERGE)
-	{
+	{	  
+	  fprintf(stderr,"IN COV\n");
 	  for(j=1;j<=n;++j)
 	    {
 	      avg1[j]=0;
@@ -218,16 +239,14 @@ int main(int argc, char **argv)
 	  for(i=1;i<=n;++i)
 	    for(j=1;j<=n;++j)
 	      tmp[i][j] = cov1[i][j]/nstep - avg1[i]*avg1[j]/(nstep*nstep);
-	  for(i=1;i<=n;++i)
-	    for(j=1;j<=n;++j)
-	      fprintf(stderr,"%d %d %e\n",i,j,tmp[i][j]);
-
+	  
 	  jacobi(tmp,n,eval,evect,&nrot);
 	  gaussj(evect,n,tmp1,1);
 
 	  for(i=1;i<=n;++i)
 	    eval[i] = fabs(eval[i]);
 	}
+      
       
       for(i=1;i<=n;++i)
 	atemp[i] = gasdev(&IDUM)*sqrt(eval[i])*stepfac;
@@ -241,13 +260,6 @@ int main(int argc, char **argv)
       
       
     SKIP1:
-      
-      /*
-      fprintf(fp,"TRY: %d ",n);
-      for(i=1;i<=n;++i)
-	fprintf(fp," %e",a[i]);
-      fprintf(fp,"\n");
-      */
 
       if(i=prior_violation(n,a,prior1,prior2)) {
 	//fprintf(stdout,"%d\n",i);
@@ -306,9 +318,9 @@ float chi2func(float *a, int n)
   char aa[1000];
   float mh[10000], gc[10000], xxx[1000], mgc, sig, sig_err, x1;
   FILE *fp;
-  int i,j,nbin=50,n1,ibin;
+  int i,j,nbin=50,n1, np,ibin;
   double x, y, e, chi2=0;
-  static int niter =0, flag =1, np;
+  static int niter =0, flag =1;
   static float *xx, *yy, *zz;
 
   // initialize the vectors for spline interp
@@ -324,7 +336,7 @@ float chi2func(float *a, int n)
   fp = fopen("gc.bat","w");
   for(j=0,i=1;i<=ntotal;++i)
     {
-      if(i>=4 && i<=11)
+      if((i>=4 && i<=11) || i>ntotal-2)
 	fprintf(fp,"%.0f\n",atotal[i]);
       else
 	{
@@ -339,9 +351,7 @@ float chi2func(float *a, int n)
   fclose(fp);
 
   // now run the script
-  //fprintf(stdout,"HERE6\n");fflush(stdout);
   system("./sh.tree_mcmc");
-  //fprintf(stdout,"HERE7\n");fflush(stdout);
 
   // now read in the result and get a chi^2
   fp = openfile("gcmass.dat");
@@ -354,7 +364,6 @@ float chi2func(float *a, int n)
       fgets(aa,1000,fp);
     }
   fclose(fp);
-  //fprintf(stdout,"HERE8\n");fflush(stdout);
 
   // bin the relation to get the mean relation
   j = np = 0;
@@ -363,22 +372,21 @@ float chi2func(float *a, int n)
     {
       if(j==nbin || i==n1) 
 	{ 
-	  //fprintf(stdout,"HERE9\n");fflush(stdout);
 	  nbin = j;
 	  x = x/nbin;
 	  y = y/nbin;
-	  e = (e/nbin-y*y)/(nbin-1)*4; // error in the mean (with some buffer)
+	  e = (e/nbin-y*y)/(nbin-1); // error in the mean (with some buffer)
 	  //if(e<0)continue;
-	  chi2 += ((y-x) + 4.4)*((y-x) + 4.4)/(e+0.1*0.1);
-
-	  //fprintf(stdout,"HERE10\n");fflush(stdout);
+	  chi2 += ((y-x) + 4.4)*((y-x) + 4.4)/(e+0.07*0.07);
 
 	  // tabulate the mean relation
 	  np++;
 	  xx[np] = x;
 	  yy[np] = y;
 
-	  //printf("CHIxx %e %e %e %e\n",x,y,e,y-x);fflush(stdout);
+	  if(DIAGNOSTIC)
+	    printf("CHILIN %e %e %e %e %e\n",
+		   x,y,e,y-x,((y-x) + 4.4)*((y-x) + 4.4)/(e+0.07*0.07));
 	  x = y = e = j = 0;
 	}
       x += log10(mh[i]);
@@ -388,9 +396,11 @@ float chi2func(float *a, int n)
       j++;
     }
   nbin = 200;
-  //printf("CHIFIT %e\n",chi2);
-  //fflush(stdout);
-  //return chi2;
+  if(DIAGNOSTIC)
+    {
+      printf("CHIFIT %e\n",chi2);
+      fflush(stdout);
+    }
 
   // initialize the spline
   spline(xx,yy,np,1.0E+30,1.0E+30,zz);
@@ -407,10 +417,10 @@ float chi2func(float *a, int n)
 	  sig = sqrt((e/nbin));
 	  sig_err = bootstrap_variance(xxx,j);
 	  e = j = 0;
-	  //if(ibin<3 || ibin>9)continue;
-	  if(ibin==1)continue;
+	  if(ibin==1 || ibin==5)continue;
 	  chi2 += (sig-0.2)*(sig-0.2)/(sig_err*sig_err + 0.03*0.03); // assume error of 0.05dex on scatter
-	  //printf("CHISIG %d %d %d %e %e %e\n",i,j,nbin,sig,sig_err,chi2);
+	  if(DIAGNOSTIC)
+	    printf("CHISIG %d %d %d %e %e %e\n",i,j,nbin,sig,sig_err,chi2);
 	}
       // what is mean at this halo mass
       splint(xx,yy,zz,np,log10(mh[i]),&mgc);
@@ -422,8 +432,11 @@ float chi2func(float *a, int n)
     }
   
 
-  //fprintf(stdout,"CHI2 %d %e\n",niter++,chi2);fflush(stdout);
-  //exit(0);
+  if(DIAGNOSTIC)
+    {
+      fprintf(stdout,"CHI2 %d %e\n",niter++,chi2);fflush(stdout);
+      exit(0);
+    }
   //if(niter==2)exit(0);
   //if(chi2<0)exit(0);
   if(chi2<0)return 1.0E+7;
@@ -464,4 +477,23 @@ int prior_violation(int n, float *a, float *p1, float *p2)
       if(a[i]>=p2[i])return i;
     }
   return 0;
+}
+
+int read_chain(float **chain, char *fname, int np)
+{
+  float x;
+  int i,j,n,i1;
+  FILE *fp;
+  char a[1000];
+
+  fp = openfile(fname);
+  n = filesize(fp);
+
+  for(i=1;i<=n;++i)
+    {
+      fscanf(fp,"%d %d %f", &i1,&i1,&x);
+      for(j=1;j<=np;++j)fscanf(fp,"%f",&chain[i][j]);
+    }
+  fprintf(stdout,"Done reading [%d] lines from [%s]\n",n,fname);
+  return n;
 }
