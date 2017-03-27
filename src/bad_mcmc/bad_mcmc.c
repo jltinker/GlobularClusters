@@ -134,7 +134,7 @@ int main(int argc, char **argv)
   prior2[2] = 1.0;
   prior1[3] = 0.0;
   prior2[3] = 10000.0;
-  prior1[4] = 0;
+  prior1[4] = 0.5;
   prior2[4] = 1.0;
 
   if(n==8) {
