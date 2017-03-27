@@ -369,7 +369,7 @@ float chi2func(float *a, int n)
       j++;
     }
   nbin = 200;
-  //printf("CHIFIT %e\n",chi2);
+  printf("CHIFIT %e\n",chi2);
 
   // initialize the spline
   spline(xx,yy,np,1.0E+30,1.0E+30,zz);
