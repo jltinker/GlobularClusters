@@ -359,7 +359,7 @@ float chi2func(float *a, int n)
 	  xx[np] = x;
 	  yy[np] = y;
 
-	  printf("CHIxx %e %e %e %e\n",x,y,e,y-x);
+	  //printf("CHIxx %e %e %e %e\n",x,y,e,y-x);
 	  x = y = e = j = 0;
 	}
       x += log10(mh[i]);
@@ -369,7 +369,7 @@ float chi2func(float *a, int n)
       j++;
     }
   nbin = 200;
-  printf("CHIFIT %e\n",chi2);
+  //printf("CHIFIT %e\n",chi2);
 
   // initialize the spline
   spline(xx,yy,np,1.0E+30,1.0E+30,zz);
@@ -388,7 +388,7 @@ float chi2func(float *a, int n)
 	  e = j = 0;
 	  //if(ibin<3 || ibin>9)continue;
 	  chi2 += (sig-0.2)*(sig-0.2)/(sig_err*sig_err + 0.03*0.03); // assume error of 0.05dex on scatter
-	  printf("CHISIG %d %d %d %e %e %e\n",i,j,nbin,sig,sig_err,chi2);
+	  //printf("CHISIG %d %d %d %e %e %e\n",i,j,nbin,sig,sig_err,chi2);
 	}
       // what is mean at this halo mass
       splint(xx,yy,zz,np,log10(mh[i]),&mgc);
@@ -401,7 +401,7 @@ float chi2func(float *a, int n)
   
 
   // fprintf(stdout,"CHI2 %d %e\n",niter++,chi2);fflush(stdout);
-  exit(0);
+  //exit(0);
   //if(niter==2)exit(0);
   //if(chi2<0)exit(0);
   if(chi2<0)return 1.0E+7;
