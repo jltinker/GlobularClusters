@@ -50,7 +50,7 @@ int main(int argc, char **argv)
   char aa[1000];
   float chi2=0, stepfac=1, chi2prev, chi2min = 1000, amin[10];
   float scatterprev, ageprev;
-  int niter=0, NSTEP_MAX=1000000,n=3, i, NSTEP_CONVERGE=10000, NSTEP_BURN=2000, OUTPUT=1, nlines;
+  int niter=0, NSTEP_MAX=1000000,n=3, i, NSTEP_CONVERGE=10000, NSTEP_BURN=200, OUTPUT=1, nlines;
   FILE *fp, *fp1;
   long IDUM=-556;
 
@@ -181,9 +181,11 @@ int main(int argc, char **argv)
 
   while(nstep < NSTEP_MAX)
     {
+      //fprintf(stdout,"HERE1\n");fflush(stdout);
       for(i=1;i<=n;++i)
 	  aprev[i] = a[i];
 
+      //fprintf(stdout,"HERE2\n");fflush(stdout);
       // BURN IN: get the new proposal
       if(nstep<NSTEP_BURN)
 	{
@@ -191,6 +193,7 @@ int main(int argc, char **argv)
 	    for(i=1;i<=n;++i) {
 	      a[i] = (1+gasdev(&IDUM)*start_dev[i]*stepfac_burn)*aprev[i];
 	    }
+	  //fprintf(stdout,"HERE3\n");fflush(stdout);
 	  goto SKIP1;
 	}
 
@@ -215,14 +218,16 @@ int main(int argc, char **argv)
 	  for(i=1;i<=n;++i)
 	    for(j=1;j<=n;++j)
 	      tmp[i][j] = cov1[i][j]/nstep - avg1[i]*avg1[j]/(nstep*nstep);
-	  
+	  for(i=1;i<=n;++i)
+	    for(j=1;j<=n;++j)
+	      fprintf(stderr,"%d %d %e\n",i,j,tmp[i][j]);
+
 	  jacobi(tmp,n,eval,evect,&nrot);
 	  gaussj(evect,n,tmp1,1);
 
 	  for(i=1;i<=n;++i)
 	    eval[i] = fabs(eval[i]);
 	}
-      
       
       for(i=1;i<=n;++i)
 	atemp[i] = gasdev(&IDUM)*sqrt(eval[i])*stepfac;
@@ -236,6 +241,13 @@ int main(int argc, char **argv)
       
       
     SKIP1:
+      
+      /*
+      fprintf(fp,"TRY: %d ",n);
+      for(i=1;i<=n;++i)
+	fprintf(fp," %e",a[i]);
+      fprintf(fp,"\n");
+      */
 
       if(i=prior_violation(n,a,prior1,prior2)) {
 	//fprintf(stdout,"%d\n",i);
@@ -292,11 +304,12 @@ int main(int argc, char **argv)
 float chi2func(float *a, int n)
 {
   char aa[1000];
-  float mh[10000], gc[10000], *xx, *yy, *zz, xxx[1000], mgc, sig, sig_err, x1;
+  float mh[10000], gc[10000], xxx[1000], mgc, sig, sig_err, x1;
   FILE *fp;
-  int i,j,nbin=50,n1, np,ibin;
+  int i,j,nbin=50,n1,ibin;
   double x, y, e, chi2=0;
-  static int niter =0, flag =1;
+  static int niter =0, flag =1, np;
+  static float *xx, *yy, *zz;
 
   // initialize the vectors for spline interp
   if(flag)
@@ -326,7 +339,9 @@ float chi2func(float *a, int n)
   fclose(fp);
 
   // now run the script
+  //fprintf(stdout,"HERE6\n");fflush(stdout);
   system("./sh.tree_mcmc");
+  //fprintf(stdout,"HERE7\n");fflush(stdout);
 
   // now read in the result and get a chi^2
   fp = openfile("gcmass.dat");
@@ -339,6 +354,7 @@ float chi2func(float *a, int n)
       fgets(aa,1000,fp);
     }
   fclose(fp);
+  //fprintf(stdout,"HERE8\n");fflush(stdout);
 
   // bin the relation to get the mean relation
   j = np = 0;
@@ -347,6 +363,7 @@ float chi2func(float *a, int n)
     {
       if(j==nbin || i==n1) 
 	{ 
+	  //fprintf(stdout,"HERE9\n");fflush(stdout);
 	  nbin = j;
 	  x = x/nbin;
 	  y = y/nbin;
@@ -354,12 +371,14 @@ float chi2func(float *a, int n)
 	  //if(e<0)continue;
 	  chi2 += ((y-x) + 4.4)*((y-x) + 4.4)/(e+0.1*0.1);
 
+	  //fprintf(stdout,"HERE10\n");fflush(stdout);
+
 	  // tabulate the mean relation
 	  np++;
 	  xx[np] = x;
 	  yy[np] = y;
 
-	  //printf("CHIxx %e %e %e %e\n",x,y,e,y-x);
+	  //printf("CHIxx %e %e %e %e\n",x,y,e,y-x);fflush(stdout);
 	  x = y = e = j = 0;
 	}
       x += log10(mh[i]);
@@ -369,8 +388,9 @@ float chi2func(float *a, int n)
       j++;
     }
   nbin = 200;
-  printf("CHIFIT %e\n",chi2);
-  fflush(stdout);
+  //printf("CHIFIT %e\n",chi2);
+  //fflush(stdout);
+  //return chi2;
 
   // initialize the spline
   spline(xx,yy,np,1.0E+30,1.0E+30,zz);
@@ -378,7 +398,7 @@ float chi2func(float *a, int n)
   // now go back through and get the scatter
   j = 0;
   ibin = 0;
-  for(i=1;i<=-n1;++i)
+  for(i=1;i<=n1;++i)
     {
       if(j==nbin || i==n1) 
 	{ 
@@ -388,6 +408,7 @@ float chi2func(float *a, int n)
 	  sig_err = bootstrap_variance(xxx,j);
 	  e = j = 0;
 	  //if(ibin<3 || ibin>9)continue;
+	  if(ibin==1)continue;
 	  chi2 += (sig-0.2)*(sig-0.2)/(sig_err*sig_err + 0.03*0.03); // assume error of 0.05dex on scatter
 	  //printf("CHISIG %d %d %d %e %e %e\n",i,j,nbin,sig,sig_err,chi2);
 	}
@@ -401,7 +422,7 @@ float chi2func(float *a, int n)
     }
   
 
-  // fprintf(stdout,"CHI2 %d %e\n",niter++,chi2);fflush(stdout);
+  //fprintf(stdout,"CHI2 %d %e\n",niter++,chi2);fflush(stdout);
   //exit(0);
   //if(niter==2)exit(0);
   //if(chi2<0)exit(0);
