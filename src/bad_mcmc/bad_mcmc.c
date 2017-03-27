@@ -350,8 +350,6 @@ float chi2func(float *a, int n)
 	  x = x/nbin;
 	  y = y/nbin;
 	  e = (e/nbin-y*y)/(nbin-1)*4; // error in the mean (with some buffer)
-	  sig = sqrt((e/nbin-y*y));
-	  sig_err = bootstrap_variance(xx,j);
 	  //if(e<0)continue;
 	  chi2 += ((y-x) + 4.4)*((y-x) + 4.4)/(e+0.1*0.1);
 
