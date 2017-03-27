@@ -377,8 +377,8 @@ float chi2func(float *a, int n)
 	  y = y/nbin;
 	  e = (e/nbin-y*y)/(nbin-1); // error in the mean (with some buffer)
 	  //if(e<0)continue;
-	  if(x>13.5)continue; //don't do anything above logM=13.5
-	  chi2 += ((y-x) + 4.4)*((y-x) + 4.4)/(e+0.07*0.07);
+	  if(x<13.5) //don't do anything above logM=13.5
+	    chi2 += ((y-x) + 4.4)*((y-x) + 4.4)/(e+0.07*0.07);
 
 	  // tabulate the mean relation
 	  np++;
