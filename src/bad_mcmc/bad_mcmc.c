@@ -46,6 +46,7 @@ int read_chain(float **chain, char *fname, int np);
 float atotal[100];
 int ifree[100], ntotal;
 int DIAGNOSTIC;
+float SIGVEC[100];
 
 int main(int argc, char **argv)
 {
@@ -295,6 +296,8 @@ int main(int argc, char **argv)
       fprintf(fp,"%d %d %e ",nstep,nacc,chi2);
       for(i=1;i<=n;++i)
 	fprintf(fp," %e",a[i]);
+      for(i=1;i<=5;++i)
+	fprintf(fp,"%.3f ",SIGVEC[i]);
       fprintf(fp,"\n");
       fflush(fp);
       chi2prev = chi2;
@@ -416,6 +419,7 @@ float chi2func(float *a, int n)
 	  ibin++;
 	  if(j==n1) nbin = j;
 	  sig = sqrt((e/nbin));
+	  SIGVEC[ibin]=sig;
 	  sig_err = bootstrap_variance(xxx,j);
 	  e = j = 0;
 	  if(ibin==1 || ibin==5)continue;
