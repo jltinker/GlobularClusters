@@ -297,7 +297,7 @@ int main(int argc, char **argv)
       for(i=1;i<=n;++i)
 	fprintf(fp," %e",a[i]);
       for(i=1;i<=5;++i)
-	fprintf(fp,"%.3f ",SIGVEC[i]);
+	fprintf(fp," %.3f",SIGVEC[i]);
       fprintf(fp,"\n");
       fflush(fp);
       chi2prev = chi2;
