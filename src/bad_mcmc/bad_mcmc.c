@@ -410,7 +410,7 @@ float chi2func(float *a, int n)
   spline(xx,yy,np,1.0E+30,1.0E+30,zz);
 
   // now go back through and get the scatter
-  j = 0;
+  j  = e = 0;
   ibin = 0;
   for(i=1;i<=n1;++i)
     {
@@ -418,11 +418,11 @@ float chi2func(float *a, int n)
 	{ 
 	  ibin++;
 	  if(j==n1) nbin = j;
-	  sig = sqrt((e/nbin));
+	  sig = sqrt((e/nbin)-x*x/(nbin*nbin));
 	  SIGVEC[ibin]=sig;
 	  sig_err = bootstrap_variance(xxx,j);
-	  e = j = 0;
-	  if(ibin==1 || ibin==5)continue;
+	  e = j = x = 0;
+	  // if(ibin==1 || ibin==5)continue;
 	  chi2 += (sig-0.2)*(sig-0.2)/(sig_err*sig_err + 0.03*0.03); // assume error of 0.05dex on scatter
 	  if(DIAGNOSTIC)
 	    printf("CHISIG %d %d %d %e %e %e\n",i,j,nbin,sig,sig_err,chi2);
@@ -430,9 +430,10 @@ float chi2func(float *a, int n)
       // what is mean at this halo mass
       splint(xx,yy,zz,np,log10(mh[i]),&mgc);
       x1 = log10(gc[i]) - mgc;
-      //printf("TRIAL %d %f %f %f %f\n",j,x1,log10(gc[i]),log10(mh[i]),mgc);
+      //printf("TRIAL %d %f %f %f %f\n",ibin,x1,log10(gc[i]),log10(mh[i]),mgc);
       xxx[j] = x1;
       e += x1*x1;
+      x += x1;
       j++;
     }
   
