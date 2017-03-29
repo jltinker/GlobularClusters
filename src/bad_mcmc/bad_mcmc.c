@@ -422,7 +422,7 @@ float chi2func(float *a, int n)
 	  SIGVEC[ibin]=sig;
 	  sig_err = bootstrap_variance(xxx,j);
 	  e = j = x = 0;
-	  // if(ibin==1 || ibin==5)continue;
+	  if(ibin==1 || ibin==5)continue;
 	  chi2 += (sig-0.2)*(sig-0.2)/(sig_err*sig_err + 0.03*0.03); // assume error of 0.05dex on scatter
 	  if(DIAGNOSTIC)
 	    printf("CHISIG %d %d %d %e %e %e\n",i,j,nbin,sig,sig_err,chi2);
