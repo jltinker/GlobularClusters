@@ -409,8 +409,11 @@ float chi2func(float *a, int n)
   // initialize the spline
   spline(xx,yy,np,1.0E+30,1.0E+30,zz);
 
+  for(i=1;i<=5;++i)
+    SIGVEC[i] = 0;
+
   // now go back through and get the scatter
-  j = 0;
+  j = e = 0;
   ibin = 0;
   for(i=1;i<=n1;++i)
     {
