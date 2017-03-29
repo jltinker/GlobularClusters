@@ -328,6 +328,7 @@ int does_merger_happen(float m2, float m1, float time, float redshift, float eta
 {
   float t_dyn, t_merge, mt;
   
+
   // if we're not taking into account dynamical friction, then just assume
   // that the halos merge
   if(!SWITCH_DYNAMICAL_FRICTION) return 1;
@@ -413,12 +414,14 @@ void read_tree(char *fname)
 	  t.mass[i][idum+1] = x1*0.7;
 	  t.gasmass[i][idum+1] = fgas_lookup(t.redshift[idum+1],x1*0.7)*x1*0.7*BARYON_FRACTION;
 	  t.mstar[i][idum+1] = mstar_lookup(t.redshift[idum+1],x1*0.7)*BARYON_FRACTION;
-	  //printf("%f %e %e %e\n",t.redshift[idum+1],t.mass[i][idum+1],
+	  // let's output for diagnostics
+	  //printf("HALO %d %f %e %e %e\n",i,t.redshift[idum+1],t.mass[i][idum+1],
 	  //	 t.gasmass[i][idum+1]/BARYON_FRACTION/t.mass[i][idum+1],t.mstar[i][idum+1]);
 	  if(SINGLE_GC_POPULATION==2)
 	    if(j==t.nd[i])t.gc[i] = primordial_gc(t.mass[i][idum+1], t.redshift[idum+1]);
 	}
     }
+  //exit(0);
 }
 
 float fgas_lookup(float redshift, float mass)
