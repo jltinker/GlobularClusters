@@ -45,7 +45,7 @@ int read_chain(float **chain, char *fname, int np);
  */
 float atotal[100];
 int ifree[100], ntotal;
-int DIAGNOSTIC;
+int DIAGNOSTIC, FIT_SIGMA=1;
 float SIGVEC[100];
 
 int main(int argc, char **argv)
@@ -57,18 +57,40 @@ int main(int argc, char **argv)
   FILE *fp, *fp1;
   long IDUM=-556;
 
-  int nstep=0, nacc=0, ndim, nrot, k, j;
+  int nstep=0, nacc=0, ndim, nrot, k, j, nflags;
   float **cov1,**tmp,*a,*avg1,stepfac_burn,prior1[10],prior2[10],xx[100],
     **evect,*eval,*aprev,*atemp,**tmp1,*opar,x1,fsat,**chain,*start_dev,*eval_prev;
 
   stepfac_burn = 0.1;
   stepfac = 0.4;
 
+  a=vector(1,100);
+
     
+  // now read in the starting place for the run
+  fp = openfile(argv[2]);
+  nlines = filesize(fp);
+  fclose(fp);
 
   // read in what are free parameters
   fp = openfile(argv[1]);
-  nlines = filesize(fp);
+  if(filesize(fp)<nlines)
+    {
+      fprintf(stderr,"ERROR not enough lines in mcmc_start [%s]\n",argv[1]);
+      exit(0);
+    }  
+  if(filesize(fp)>nlines)
+    {
+      nflags = filesize(fp)-nlines;
+      fprintf(stderr,"%d extra lines in mcmc_start, for directives\n",nflags);
+      for(i=1;i<=nflags;++i)
+	{
+	  switch (i){
+	  case 1: fscanf(fp,"%d",&FIT_SIGMA);fprintf(stderr,"FIT_SIGMA= %d\n",FIT_SIGMA); 	    
+	  default: fgets(aa,1000,fp);
+	  }
+	}
+    }
   ntotal = nlines;
   n = 0;
   for(i=1;i<=nlines;++i)
@@ -79,9 +101,26 @@ int main(int argc, char **argv)
     }
   fprintf(stdout,"Number of free parameters: %d\n",n);
   fclose(fp);
+  //exit(0);
+
+
+  // now read in the starting place for the run
+  fp = openfile(argv[2]);
+  nlines = filesize(fp);
+  j = 0;
+  for(i=1;i<=nlines;++i)
+    {
+      fscanf(fp,"%f",&x1);fgets(aa,1000,fp);
+      atotal[i] = x1;
+      if(ifree[i]) { a[++j]=x1;
+	if(i==18) // that's the mass efficiency amplitude
+	  a[j] = log10(a[j]);
+	fprintf(stdout, "param a[%d] = %e\n",j,a[j]); }
+    }
+  fflush(stdout);
+  fclose(fp);
 
   // declare a bunch of vectors/matrices
-  a=vector(1,n);
   start_dev=vector(1,n);
   aprev=vector(1,n);
   atemp=vector(1,n);
@@ -97,25 +136,6 @@ int main(int argc, char **argv)
   chain=matrix(1,NSTEP_CONVERGE,1,n);
 
 
-  // now read in the starting place for the run
-  fp = openfile(argv[2]);
-  if(filesize(fp)!=nlines) 
-    {
-      fprintf(stderr,"ERROR: number of lines in [%s] != [%s]\n",argv[1],argv[2]);
-      exit(0);
-    }
-  j = 0;
-  for(i=1;i<=nlines;++i)
-    {
-      fscanf(fp,"%f",&x1);fgets(aa,1000,fp);
-      atotal[i] = x1;
-      if(ifree[i]) { a[++j]=x1;
-	if(i==18) // that's the mass efficiency amplitude
-	  a[j] = log10(a[j]);
-	fprintf(stdout, "param a[%d] = %e\n",j,a[j]); }
-    }
-  fflush(stdout);
-  fclose(fp);
 
   if(argc>3)
     stepfac = atof(argv[3]);
@@ -210,18 +230,18 @@ int main(int argc, char **argv)
       // BURN IN: get the new proposal
       if(nstep<NSTEP_BURN)
 	{
-	  fprintf(stderr,"IN BURN\n");
 	  if(nstep>0)
 	    for(i=1;i<=n;++i) {
 	      a[i] = (1+gasdev(&IDUM)*start_dev[i]*stepfac_burn)*aprev[i];
 	    }
+	  for(i=1;i<=-n;++i) 
+	    printf("TRY %d %e %e %e\n",niter,a[i],stepfac_burn,aprev[i]);
 	  goto SKIP1;
 	}
 
       //new proposal from covariance matrix
       if(nstep>=NSTEP_BURN && nstep<NSTEP_CONVERGE)
 	{	  
-	  fprintf(stderr,"IN COV\n");
 	  for(j=1;j<=n;++j)
 	    {
 	      avg1[j]=0;
@@ -263,7 +283,7 @@ int main(int argc, char **argv)
     SKIP1:
 
       if(i=prior_violation(n,a,prior1,prior2)) {
-	//fprintf(stdout,"%d\n",i);
+	fprintf(stdout,"%d %e\n",i,a[abs(i)]);
 	for(i=1;i<=n;++i) 
 	  a[i] = aprev[i];
 	continue;
@@ -399,6 +419,17 @@ float chi2func(float *a, int n)
       //printf("CHI  %d %e %e %e %e %f %f\n",j+1,x,y,e,log10(mh[i]),log10(gc[i]));
       j++;
     }
+  for(i=1;i<=5;++i)
+    SIGVEC[i] = 0;
+
+  if(DIAGNOSTIC && !FIT_SIGMA)
+    {
+      fprintf(stdout,"CHI2 %d %e\n",niter++,chi2);fflush(stdout);
+      exit(0);
+    }
+
+  if(!FIT_SIGMA) return chi2; // return NOW if we're not fitting the widths
+
   nbin = 200;
   if(DIAGNOSTIC)
     {
