@@ -92,7 +92,7 @@ void evolve_tree()
 {
   FILE *fp;
   int i, ip, flag=1, j, nhalo, nmerge=0,itarg;
-  float m1, m2, dm, mgc, fgc;
+  float m1, m2, dm, mgc, fgc, powmass;
 
 
   nhalo = t.nhalo;
@@ -178,10 +178,16 @@ void evolve_tree()
 		      // is mass ratio high enough? 
 		      if(m2/m1>MERGER_RATIO)
 			{
+			  // get halo-mass dependent efficiency
+			  if(t.mass[itarg][i]>MERGER_EFF_MASS_PIVOT)
+			    powmass = 1;
+			  else
+			    powmass = pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE);
+
 			  dm = 3.0E6*(t.gasmass[itarg][i] + t.gasmass[j][i])/BARYON_FRACTION/1.0E11*MERGER_EFFICIENCY*
 			    pow(m2/m1,MERGER_RATIO_POWER)* //dependence on merger ratio
-			    pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE)* // redshift evolution
-			    pow((1+t.redshift[i])/(1+MERGER_EFF_EVOLUTION_PIVOT),MERGER_EFF_EVOLUTION_SLOPE); // mass evolution
+			    powmass* // mass evolution
+			    pow((1+t.redshift[i])/(1+MERGER_EFF_EVOLUTION_PIVOT),MERGER_EFF_EVOLUTION_SLOPE); // redshift evolution
 
 			  dm *= exp(gasdev(&IDUM)*EFFICIENCY_SCATTER*log(10));
 			  if(dm<1.0E+5)dm=0;
@@ -203,9 +209,15 @@ void evolve_tree()
 		    {
 		      if(t.gasmass[j][i]/(BARYON_FRACTION*t.mass[j][i])>DISK_THRESHOLD)
 			{
+			  // get halo-mass dependent efficiency
+			  if(t.mass[itarg][i]>MERGER_EFF_MASS_PIVOT)
+			    powmass = 1;
+			  else
+			    powmass = pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE);
+
 			  dm = 3.06E6*(t.gasmass[j][i])/BARYON_FRACTION/1.0E11*DISK_EFFICIENCY*
 			    fabs(t.lookback_time[i-1]-t.lookback_time[i])/0.1*
-			    pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE)* // redshift evolution
+			    powmass* // mass evolution
 			    pow((1+t.redshift[i])/(1+MERGER_EFF_EVOLUTION_PIVOT),MERGER_EFF_EVOLUTION_SLOPE); // redshift evolution
 			  dm *= exp(gasdev(&IDUM)*EFFICIENCY_SCATTER*log(10));
 			  if(dm<1.0E+5)dm=0;
