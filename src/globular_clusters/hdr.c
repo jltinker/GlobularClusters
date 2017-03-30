@@ -28,6 +28,7 @@ float DISK_THRESHOLD = 0.9; // threshold in fgas for making GCs in disks
 float MERGER_RATIO_POWER = 0; // power law slope for merger_ratio efficiency
 float MSTAR_SCATTER_VALUE = 0.2; // scatter in stellar mass at fixed halo mass (log10)
 float MGAS_SCATTER_VALUE = 0.2; // scatter in gas mass at fixed halo mass (log10)
+float EFFICIENCY_SCATTER = 0.2; // scatter if GC production efficiency
 
 // random seeds
 long IDUM = 555; // this one for gasdev()
