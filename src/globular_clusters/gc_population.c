@@ -183,14 +183,14 @@ void evolve_tree()
 			    pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE)* // redshift evolution
 			    pow((1+t.redshift[i])/(1+MERGER_EFF_EVOLUTION_PIVOT),MERGER_EFF_EVOLUTION_SLOPE); // mass evolution
 
-			    dm *= exp(gasdev(&IDUM)*EFFICIENCY_SCATTER*log(10));
+			  dm *= exp(gasdev(&IDUM)*EFFICIENCY_SCATTER*log(10));
 			  if(dm<1.0E+5)dm=0;
 			  if(dm==0)continue;
 			  t.gc[itarg] += dm;
 			  t.gc_age[itarg] += dm*t.lookback_time[i];
 			  t.metallicity[itarg]+=dm*metallicity(t.mstar[itarg][i],t.lookback_time[i]);
 			  monte_carlo_gc_population(dm,t.mstar[itarg][i]+t.mstar[j][i],t.lookback_time[i],t.redshift[i],1,itarg,i);
-			  if(itarg==-1)
+			  if(itarg==1)
 			    fprintf(stdout,"MERGER %f %e %d %e %e %e %e %e %e %f\n",
 				    t.redshift[i],t.mass[itarg][i],j,m1,m2,
 				    t.gasmass[itarg][i],t.gasmass[j][i],dm,t.gc[itarg],
