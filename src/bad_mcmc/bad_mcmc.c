@@ -217,7 +217,8 @@ int main(int argc, char **argv)
     {
       stepfac_burn*=-1;
       nstep = read_chain(chain,argv[7],n);
-      NSTEP_CONVERGE=nstep+1;
+      if(nstep>=NSTEP_CONVERGE)
+	NSTEP_CONVERGE=nstep+1;
     }
   
 
