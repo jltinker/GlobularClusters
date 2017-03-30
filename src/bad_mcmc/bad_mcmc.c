@@ -522,7 +522,7 @@ int read_chain(float **chain, char *fname, int np)
   float x;
   int i,j,n,i1;
   FILE *fp;
-  char a[1000];
+  char aa[1000];
 
   fp = openfile(fname);
   n = filesize(fp);
@@ -531,6 +531,7 @@ int read_chain(float **chain, char *fname, int np)
     {
       fscanf(fp,"%d %d %f", &i1,&i1,&x);
       for(j=1;j<=np;++j)fscanf(fp,"%f",&chain[i][j]);
+      fgets(aa,1000,fp);
     }
   fprintf(stdout,"Done reading [%d] lines from [%s]\n",n,fname);
   return n;
