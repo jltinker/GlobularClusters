@@ -183,7 +183,7 @@ void evolve_tree()
 			    pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE)* // redshift evolution
 			    pow((1+t.redshift[i])/(1+MERGER_EFF_EVOLUTION_PIVOT),MERGER_EFF_EVOLUTION_SLOPE); // mass evolution
 
-			    dm *= exp(gasdev(&IDUM)*0.2*log(10));
+			    dm *= exp(gasdev(&IDUM)*EFFICIENCY_SCATTER*log(10));
 			  if(dm<1.0E+5)dm=0;
 			  if(dm==0)continue;
 			  t.gc[itarg] += dm;
@@ -207,7 +207,7 @@ void evolve_tree()
 			    fabs(t.lookback_time[i-1]-t.lookback_time[i])/0.1*
 			    pow(t.mass[itarg][i]/MERGER_EFF_MASS_PIVOT,MERGER_EFF_MASS_SLOPE)* // redshift evolution
 			    pow((1+t.redshift[i])/(1+MERGER_EFF_EVOLUTION_PIVOT),MERGER_EFF_EVOLUTION_SLOPE); // redshift evolution
-			  dm *= exp(gasdev(&IDUM)*0.2*log(10));
+			  dm *= exp(gasdev(&IDUM)*EFFICIENCY_SCATTER*log(10));
 			  if(dm<1.0E+5)dm=0;
 			  if(dm==0)continue;
 			  t.gc[itarg] += dm;
