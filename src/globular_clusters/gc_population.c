@@ -190,7 +190,7 @@ void evolve_tree()
 			  t.gc_age[itarg] += dm*t.lookback_time[i];
 			  t.metallicity[itarg]+=dm*metallicity(t.mstar[itarg][i],t.lookback_time[i]);
 			  monte_carlo_gc_population(dm,t.mstar[itarg][i]+t.mstar[j][i],t.lookback_time[i],t.redshift[i],1,itarg,i);
-			  if(itarg==1)
+			  if(itarg==-1)
 			    fprintf(stdout,"MERGER %f %e %d %e %e %e %e %e %e %f\n",
 				    t.redshift[i],t.mass[itarg][i],j,m1,m2,
 				    t.gasmass[itarg][i],t.gasmass[j][i],dm,t.gc[itarg],
