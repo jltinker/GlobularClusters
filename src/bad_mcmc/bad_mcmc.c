@@ -422,13 +422,7 @@ float chi2func(float *a, int n)
   for(i=1;i<=5;++i)
     SIGVEC[i] = 0;
 
-  if(DIAGNOSTIC && !FIT_SIGMA)
-    {
-      fprintf(stdout,"CHI2 %d %e\n",niter++,chi2);fflush(stdout);
-      exit(0);
-    }
-
-  if(!FIT_SIGMA) return chi2; // return NOW if we're not fitting the widths
+  //if(!FIT_SIGMA) return chi2; // return NOW if we're not fitting the widths
 
   nbin = 200;
   if(DIAGNOSTIC)
@@ -454,7 +448,8 @@ float chi2func(float *a, int n)
 	  sig_err = bootstrap_variance(xxx,j);
 	  e = j = x = 0;
 	  if(ibin==1 || ibin==5)continue;
-	  chi2 += (sig-0.2)*(sig-0.2)/(sig_err*sig_err + 0.03*0.03); // assume error of 0.05dex on scatter
+	  if(FIT_SIGMA)
+	    chi2 += (sig-0.2)*(sig-0.2)/(sig_err*sig_err + 0.03*0.03); // assume error of 0.05dex on scatter
 	  if(DIAGNOSTIC)
 	    printf("CHISIG %d %d %d %e %e %e\n",i,j,nbin,sig,sig_err,chi2);
 	}
