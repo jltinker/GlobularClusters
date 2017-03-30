@@ -179,9 +179,19 @@ int main(int argc, char **argv)
     prior1[8] = -3.0;
     prior2[8] = 3.0;
   }
-  if(n==7) {
+  //"old 7p"
+  if(n==-7) {
     prior1[5] = -3;
     prior2[5] = 3;
+    prior1[6] = -3.0;
+    prior2[6] = 3.0;
+    prior1[7] = -2;
+    prior2[7] = 2.0;
+  }
+  //"new 7;"
+  if(n==7) {
+    prior1[5] = 8;
+    prior2[5] = 14;
     prior1[6] = -3.0;
     prior2[6] = 3.0;
     prior1[7] = -2;
