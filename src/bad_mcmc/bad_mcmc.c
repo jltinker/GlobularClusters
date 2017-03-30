@@ -46,7 +46,7 @@ int read_chain(float **chain, char *fname, int np);
 float atotal[100];
 int ifree[100], ntotal;
 int DIAGNOSTIC, FIT_SIGMA=1;
-float SIGVEC[100];
+float SIGVEC[100],SIGOLD[100];
 
 int main(int argc, char **argv)
 {
@@ -303,8 +303,10 @@ int main(int argc, char **argv)
 	{
 	  nacc--;
 	  chi2 = chi2prev;
-	    for(i=1;i<=ndim;++i)
-	      a[i] = aprev[i];
+	  for(i=1;i<=ndim;++i)
+	    a[i] = aprev[i];
+	  for(i=1;i<=5;++i)
+	    SIGVEC[i] = SIGOLD[i];
 	}
       
       // put this element in the chain if we're below convergence
@@ -420,7 +422,10 @@ float chi2func(float *a, int n)
       j++;
     }
   for(i=1;i<=5;++i)
-    SIGVEC[i] = 0;
+    {
+      SIGOLD[i] = SIGVEC[i];
+      SIGVEC[i] = 0;
+    }
 
   if(DIAGNOSTIC && !FIT_SIGMA)
     {
