@@ -133,7 +133,7 @@ int main(int argc, char **argv)
   eval=vector(1,n);
   eval_prev=vector(1,n);
 
-  chain=matrix(1,NSTEP_CONVERGE,1,n);
+  chain=matrix(1,NSTEP_CONVERGE*2,1,n);
 
 
 
