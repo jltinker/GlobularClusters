@@ -57,7 +57,7 @@ int main(int argc, char **argv)
   FILE *fp, *fp1;
   long IDUM=-556;
 
-  int nstep=0, nacc=0, ndim, nrot, k, j, nflags;
+  int nstep=0, nacc=0, ndim, nrot, k, j, nflags, nstep_init;
   float **cov1,**tmp,*a,*avg1,stepfac_burn,prior1[10],prior2[10],xx[100],
     **evect,*eval,*aprev,*atemp,**tmp1,*opar,x1,fsat,**chain,*start_dev,*eval_prev;
 
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
       for(i=1;i<=nflags;++i)
 	{
 	  switch (i){
-	  case 1: fscanf(fp,"%d",&FIT_SIGMA);fprintf(stderr,"FIT_SIGMA= %d\n",FIT_SIGMA); 	    
+	  case 1: fscanf(fp,"%d",&FIT_SIGMA);fprintf(stdout,"FIT_SIGMA= %d\n",FIT_SIGMA); 	    
 	  default: fgets(aa,1000,fp);
 	  }
 	}
@@ -232,6 +232,7 @@ int main(int argc, char **argv)
     }
   
 
+  nstep_init = nstep;
 
   while(nstep < NSTEP_MAX)
     {
@@ -326,7 +327,7 @@ int main(int argc, char **argv)
 	  chain[nstep][i] = a[i];
       
       
-      fprintf(fp,"%d %d %e ",nstep,nacc,chi2);
+      fprintf(fp,"%d %d %e ",nstep-nstep_init,nacc,chi2);
       for(i=1;i<=n;++i)
 	fprintf(fp," %e",a[i]);
       for(i=1;i<=5;++i)
@@ -421,8 +422,8 @@ float chi2func(float *a, int n)
 	  //if(e<0)continue;
 	  if(x<13.5) //don't do anything above logM=13.5
 	    chi2 += ((y-x) + 4.4)*((y-x) + 4.4)/(e+0.07*0.07);
-	  if(FIT_SIGMA==2)
-	    if(fabs(x-y)>0.1)bad_fit=1;
+	  if(FIT_SIGMA>=2 && x<=13.5)
+	    if(fabs(y-x+4.4)>0.1)bad_fit=1;
 
 	  // tabulate the mean relation
 	  np++;
@@ -445,7 +446,8 @@ float chi2func(float *a, int n)
       SIGOLD[i] = SIGVEC[i];
       SIGVEC[i] = 0;
     }
-  if(FIT_SIGMA==2)chi2 = 0;
+  if(FIT_SIGMA>=2)chi2 = 0;
+  if(FIT_SIGMA>=2 && bad_fit && !DIAGNOSTIC) return 1.0E+7;
 
   //if(!FIT_SIGMA) return chi2; // return NOW if we're not fitting the widths
 
@@ -473,9 +475,12 @@ float chi2func(float *a, int n)
 	  sig_err = bootstrap_variance(xxx,j);
 	  e = j = x = 0;
 	  if(ibin==5)continue;
-	  if(FIT_SIGMA)
+	  if(FIT_SIGMA>0 && FIT_SIGMA<3)
 	    chi2 += (sig-sig_data[ibin])*(sig-sig_data[ibin])/
 	      (sig_err*sig_err + 0.03*0.03); // assume error of 0.05dex on scatter
+	  if(FIT_SIGMA==3 && ibin==4)
+	    chi2 += (sig-sig_data[ibin])*(sig-sig_data[ibin])/
+	      (sig_err*sig_err + 0.01*0.01); // assume error of 0.05dex on scatter
 	  if(DIAGNOSTIC)
 	    printf("CHISIG %d %d %d %e %e %e\n",i,j,nbin,sig,sig_err,chi2);
 	}
