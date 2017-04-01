@@ -352,9 +352,9 @@ int main(int argc, char **argv)
 float chi2func(float *a, int n)
 {
   char aa[1000];
-  float mh[10000], gc[10000], xxx[1000], mgc, sig, sig_err, x1;
+  float mh[10000], gc[10000], xxx[1000], mgc, sig, sig_err, x1, sig_data[10];
   FILE *fp;
-  int i,j,nbin=50,n1, np,ibin;
+  int i,j,nbin=50,n1, np,ibin, bad_fit;
   double x, y, e, chi2=0;
   static int niter =0, flag =1;
   static float *xx, *yy, *zz;
@@ -366,6 +366,11 @@ float chi2func(float *a, int n)
       yy = vector(1,100);
       zz = vector(1,100);
       flag =0;
+      sig_data[1] = 0.49;
+      sig_data[2] = 0.25;
+      sig_data[3] = 0.2;
+      sig_data[4] = 0.2;
+      sig_data[0] = 0;
     }
 
   // first, need to make a batch file
@@ -404,6 +409,7 @@ float chi2func(float *a, int n)
   // bin the relation to get the mean relation
   j = np = 0;
   x = y = e = 0;
+  bad_fit = 0;
   for(i=1;i<=n1;++i)
     {
       if(j==nbin || i==n1) 
@@ -415,6 +421,8 @@ float chi2func(float *a, int n)
 	  //if(e<0)continue;
 	  if(x<13.5) //don't do anything above logM=13.5
 	    chi2 += ((y-x) + 4.4)*((y-x) + 4.4)/(e+0.07*0.07);
+	  if(FIT_SIGMA==2)
+	    if(fabs(x-y)>0.1)bad_fit=1;
 
 	  // tabulate the mean relation
 	  np++;
@@ -437,6 +445,7 @@ float chi2func(float *a, int n)
       SIGOLD[i] = SIGVEC[i];
       SIGVEC[i] = 0;
     }
+  if(FIT_SIGMA==2)chi2 = 0;
 
   //if(!FIT_SIGMA) return chi2; // return NOW if we're not fitting the widths
 
@@ -463,9 +472,10 @@ float chi2func(float *a, int n)
 	  SIGVEC[ibin]=sig;
 	  sig_err = bootstrap_variance(xxx,j);
 	  e = j = x = 0;
-	  if(ibin==1 || ibin==5)continue;
+	  if(ibin==5)continue;
 	  if(FIT_SIGMA)
-	    chi2 += (sig-0.2)*(sig-0.2)/(sig_err*sig_err + 0.03*0.03); // assume error of 0.05dex on scatter
+	    chi2 += (sig-sig_data[ibin])*(sig-sig_data[ibin])/
+	      (sig_err*sig_err + 0.03*0.03); // assume error of 0.05dex on scatter
 	  if(DIAGNOSTIC)
 	    printf("CHISIG %d %d %d %e %e %e\n",i,j,nbin,sig,sig_err,chi2);
 	}
