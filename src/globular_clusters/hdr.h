@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#define muh(x) fprintf(stdout,"%d\n",x);fflush(stdout);
+#define fmuh(x) fprintf(stdout,"%e\n",x);fflush(stdout);
+#define muhe(x) fprintf(stderr,"%d\n",x);fflush(stderr);
+
 /* Some function prototypes
  */
 int filesize(FILE *fp);
