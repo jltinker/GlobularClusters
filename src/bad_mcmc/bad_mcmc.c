@@ -65,7 +65,7 @@ int main(int argc, char **argv)
   stepfac = 0.4;
 
   a=vector(1,100);
-
+  srand48(555);
     
   // now read in the starting place for the run
   fp = openfile(argv[2]);
@@ -196,6 +196,13 @@ int main(int argc, char **argv)
     prior2[6] = 3.0;
     prior1[7] = -2;
     prior2[7] = 2.0;
+  }
+  //"new 7;"
+  if(n==6) {
+    prior1[5] = 8;
+    prior2[5] = 14;
+    prior1[6] = -3.0;
+    prior2[6] = 3.0;
   }
 
   // is there an input file for the parameters?
@@ -379,7 +386,12 @@ float chi2func(float *a, int n)
   for(j=0,i=1;i<=ntotal;++i)
     {
       if((i>=4 && i<=11) || i>ntotal-2)
-	fprintf(fp,"%.0f\n",atotal[i]);
+	{
+	  if(i>=4 && i<=11)
+	    fprintf(fp,"%.0f\n",atotal[i]);
+	  if(i>ntotal-2) 
+	    fprintf(fp,"%.0f\n",atotal[i]+(int)(drand48()*10000));
+	}
       else
 	{
 	  if(ifree[i])
@@ -474,7 +486,7 @@ float chi2func(float *a, int n)
 	  SIGVEC[ibin]=sig;
 	  sig_err = bootstrap_variance(xxx,j);
 	  e = j = x = 0;
-	  if(ibin==5)continue;
+	  if(ibin==5 && !DIAGNOSTIC)continue;
 	  if(FIT_SIGMA>0 && FIT_SIGMA<3)
 	    chi2 += (sig-sig_data[ibin])*(sig-sig_data[ibin])/
 	      (sig_err*sig_err + 0.03*0.03); // assume error of 0.05dex on scatter
