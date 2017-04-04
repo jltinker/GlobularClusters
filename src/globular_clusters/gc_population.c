@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 
   //get the input parameters
   input_params(argv);
-
+ 
   // read in the parsed tree
   read_tree(argv[2]);
   
@@ -382,6 +382,7 @@ void read_tree(char *fname)
   int i, idum, nz, nhalo, j;
   float xdum, x1;
 
+
   fp = openfile(fname);
 
   // get the number of halos and number of redshift bins
@@ -390,6 +391,10 @@ void read_tree(char *fname)
   nz = t.nz;
   t.redshift = vector(1,nz);
   t.lookback_time = vector(1,nz);
+
+  // we have an issue with our random numbers. need to make things specific to each halo
+  for(i=1;i<=nhalo;++i)
+    gasdev(&IDUM);
 
   // get the redshift information
   for(i=1;i<=t.nz;++i)
@@ -423,9 +428,9 @@ void read_tree(char *fname)
       for(j=1;j<=t.nd[i];++j)
 	{
 	  fscanf(fp,"%f %f %d\n",&xdum,&x1,&idum);
-	  t.mass[i][idum+1] = x1*0.7;
-	  t.gasmass[i][idum+1] = fgas_lookup(t.redshift[idum+1],x1*0.7)*x1*0.7*BARYON_FRACTION;
-	  t.mstar[i][idum+1] = mstar_lookup(t.redshift[idum+1],x1*0.7)*BARYON_FRACTION;
+	  t.mass[i][idum+1] = x1/0.7;
+	  t.gasmass[i][idum+1] = fgas_lookup(t.redshift[idum+1],x1/0.7)*x1/0.7*BARYON_FRACTION;
+	  t.mstar[i][idum+1] = mstar_lookup(t.redshift[idum+1],x1/0.7)*BARYON_FRACTION;
 	  // let's output for diagnostics
 	  //printf("HALO %d %f %e %e %e\n",i,t.redshift[idum+1],t.mass[i][idum+1],
 	  //	 t.gasmass[i][idum+1]/BARYON_FRACTION/t.mass[i][idum+1],t.mstar[i][idum+1]);
@@ -561,6 +566,9 @@ float mstar_lookup(float redshift, float mass)
     mdev = gasdev(&IDUM)*MSTAR_SCATTER_VALUE*log(10);
   else
     mdev = 0;
+
+  //if(redshift<0.1)
+  //printf("MSTAR %e %e %e %e\n",exp(fg),exp(mass),mdev/log(10),exp(fg+mass+mdev));
 
   //printf("LOOKUP %f %e %e %e %e %d %d\n",redshift, exp(mass),exp(fg1),exp(fg2),exp(fg),iz,i);
   return(exp(fg+mass+mdev));
