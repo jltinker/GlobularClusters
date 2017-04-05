@@ -92,7 +92,7 @@ void evolve_tree()
 {
   FILE *fp;
   int i, ip, flag=1, j, nhalo, nmerge=0,itarg;
-  float m1, m2, dm, mgc, fgc, powmass;
+  float m1, m2, dm, mgc, fgc, powmass, ratio;
 
 
   nhalo = t.nhalo;
@@ -173,10 +173,12 @@ void evolve_tree()
 		      if(t.gasmass[itarg][i]/(BARYON_FRACTION*t.mass[itarg][i])<0.04)continue;
 		      m1 = t.mstar[itarg][i] + t.gasmass[itarg][i];
 		      m2 = t.mstar[j][i] + t.gasmass[j][i];
+		      ratio = m2/m1;
+		      if(ratio>1)ratio = 1/ratio;
 
 		      //printf("%3d %10d %10d %f %f %e %e\n",i,itarg,j,t.redshift[i],m2/m1,m1,m2);
 		      // is mass ratio high enough? 
-		      if(m2/m1>MERGER_RATIO)
+		      if(ratio>MERGER_RATIO)
 			{
 			  // get halo-mass dependent efficiency
 			  if(t.mass[itarg][i]>MERGER_EFF_MASS_PIVOT)
